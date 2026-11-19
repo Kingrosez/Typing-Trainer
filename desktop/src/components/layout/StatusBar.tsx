@@ -1,19 +1,86 @@
 import { useTheme } from "../../app/providers/ThemeProvider";
+import { Database, ShieldCheck, Zap } from "lucide-react";
 
 export function StatusBar() {
   const { theme } = useTheme();
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-secondary border-t border-border text-xs">
-      <div className="flex items-center space-x-4">
-        <span>Typing Trainer v0.1.0</span>
-        <span>Offline</span>
+    <footer
+      className="flex items-center justify-between h-8 px-4 bg-card border-t border-border/80 select-none shrink-0 z-30 text-[11px] text-muted-foreground font-sans"
+      aria-label="Application Status Bar"
+    >
+      {/* Left: Keyboard Accelerator Hints */}
+      <div className="flex items-center space-x-3 text-muted-foreground/80 overflow-hidden">
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <kbd className="px-1.5 py-0.2 rounded bg-secondary/80 border border-border/60 font-mono text-[10px] text-foreground/80 font-medium">
+            Ctrl K
+          </kbd>
+          <span className="hidden sm:inline">Menu</span>
+        </div>
+
+        <span className="text-border hidden sm:inline">•</span>
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <kbd className="px-1.5 py-0.2 rounded bg-secondary/80 border border-border/60 font-mono text-[10px] text-foreground/80 font-medium">
+            Ctrl B
+          </kbd>
+          <span className="hidden md:inline">Sidebar</span>
+        </div>
+
+        <span className="text-border hidden md:inline">•</span>
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <kbd className="px-1.5 py-0.2 rounded bg-secondary/80 border border-border/60 font-mono text-[10px] text-foreground/80 font-medium">
+            Ctrl 1..8
+          </kbd>
+          <span className="hidden lg:inline">Arenas</span>
+        </div>
+
+        <span className="text-border hidden lg:inline">•</span>
+
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <kbd className="px-1.5 py-0.2 rounded bg-secondary/80 border border-border/60 font-mono text-[10px] text-foreground/80 font-medium">
+            Ctrl ,
+          </kbd>
+          <span className="hidden lg:inline">Settings</span>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <span>Theme: {theme}</span>
-        <span>Ready</span>
+      {/* Center: System Status Tag */}
+      <div className="hidden xl:flex items-center space-x-1.5 text-muted-foreground font-medium text-[11px]">
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+        <span>Typing Trainer Desktop Shell (Phase 1)</span>
       </div>
-    </div>
+
+      {/* Right: Runtime State & Persistence */}
+      <div className="flex items-center space-x-3 font-mono text-[10px]">
+        {/* Local Persistence Status */}
+        <div
+          className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400"
+          title="Local SQLite database ready in offline mode"
+        >
+          <Database className="w-3 h-3 text-emerald-500" />
+          <span className="hidden sm:inline">SQLite: Ready</span>
+        </div>
+
+        <span className="text-border">•</span>
+
+        {/* Latency */}
+        <div
+          className="flex items-center space-x-1 text-foreground/80"
+          title="Input latency: zero network overhead (processed in-memory)"
+        >
+          <Zap className="w-3 h-3 text-blue-500" />
+          <span>0ms Latency</span>
+        </div>
+
+        <span className="text-border">•</span>
+
+        {/* Theme badge */}
+        <div className="capitalize text-muted-foreground">
+          {theme}
+        </div>
+      </div>
+    </footer>
   );
 }

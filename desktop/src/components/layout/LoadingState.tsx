@@ -1,17 +1,34 @@
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent, CardHeader } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 
-export function LoadingState() {
+interface LoadingStateProps {
+  cardCount?: number;
+}
+
+export function LoadingState({ cardCount = 3 }: LoadingStateProps) {
   return (
-    <Card className="border-0 shadow-none">
-      <CardContent className="p-6">
-        <div className="flex flex-col space-y-4">
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6 max-w-5xl mx-auto py-2 animate-pulse">
+      {/* Header skeleton */}
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+
+      {/* Grid of skeleton cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Array.from({ length: cardCount }).map((_, i) => (
+          <Card key={i} className="border border-border/80">
+            <CardHeader className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-3 w-48" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-3 w-3/4" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

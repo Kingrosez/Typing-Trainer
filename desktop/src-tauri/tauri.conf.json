@@ -12,13 +12,15 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Typing Trainer",
-        "width": 1200,
-        "height": 800,
+        "width": 1440,
+        "height": 900,
         "resizable": true,
         "fullscreen": false,
-        "minWidth": 800,
-        "minHeight": 600
+        "minWidth": 1100,
+        "minHeight": 700,
+        "decorations": false
       }
     ],
     "security": {
@@ -44,10 +46,5 @@
       "allowDowngrades": true
     }
   },
-  "plugins": {
-    "log": {
-      "level": "info",
-      "filter": "warn,tao=error,wgpu=error,naga=error,tauri=info"
-    }
-  }
+  "plugins": {}
 }
