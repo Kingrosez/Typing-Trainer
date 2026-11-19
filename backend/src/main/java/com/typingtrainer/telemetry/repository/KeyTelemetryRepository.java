@@ -13,19 +13,14 @@ import java.util.UUID;
 @Repository
 public interface KeyTelemetryRepository extends JpaRepository<KeyTelemetryEntity, UUID> {
 
-    @Query("""
-        SELECT t.keyChar AS keyChar, SUM(t.opportunities) AS totalOpportunities,
-               SUM(t.errors) AS totalErrors, SUM(t.totalLatencyMs) AS totalLatencyMs
-        FROM KeyTelemetryEntity t
-        WHERE t.recordedAt >= :cutoffDate
-        GROUP BY t.keyChar
-    """)
-    List<KeySummaryProjection> aggregateKeyTelemetrySince(@Param("cutoffDate") Instant cutoffDate);
+    @Query("SELECT DISTINCT t.keyChar FROM KeyTelemetryEntity t WHERE t.recordedAt >= :cutoffDate")
+    List<String> findObservedKeysSince(@Param("cutoffDate") Instant cutoffDate);
 
-    interface KeySummaryProjection {
-        String getKeyChar();
-        Long getTotalOpportunities();
-        Long getTotalErrors();
-        Long getTotalLatencyMs();
-    }
+    @Query("""
+        SELECT t FROM KeyTelemetryEntity t
+        WHERE t.keyChar = :keyChar AND t.recordedAt >= :cutoffDate
+        ORDER BY t.recordedAt DESC
+    """)
+    List<KeyTelemetryEntity> findRecentForKeySince(@Param("keyChar") String keyChar,
+                                                   @Param("cutoffDate") Instant cutoffDate);
 }

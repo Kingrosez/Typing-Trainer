@@ -30,5 +30,15 @@ public record TypingSessionSubmissionRequest(
         double durationSeconds,
 
         @Size(max = 10000, message = "Passage must not exceed 10000 characters")
-        String passage
+        String passage,
+
+        String sessionMode,
+
+        Integer testDurationTarget,
+
+        String corpusType,
+
+        Integer pauseCount,
+
+        Double cumulativePauseSeconds
 ) {}

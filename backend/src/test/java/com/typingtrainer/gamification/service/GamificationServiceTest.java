@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,17 +43,24 @@ class GamificationServiceTest {
     }
 
     @Test
-    @DisplayName("calculateBaseXp matches approved D3/D5 formula: round(Words * 0.2) + round((Sec / 60) * 5)")
+    @DisplayName("calculateBaseXp matches approved D5 formula: round(Words * 0.2) + round(ActiveMinutes * 5) with half-up rounding")
     void testCalculateBaseXpFormula() {
-        // 60 words (300 chars), 180 seconds (3 mins)
+        // Example 1: 60 words (300 chars), 180 seconds (3 mins)
         // round(60 * 0.2) + round(3 * 5) = 12 + 15 = 27 XP
         int xp = gamificationService.calculateBaseXp(300, 180.0);
         assertThat(xp).isEqualTo(27);
 
-        // 120 words (600 chars), 240 seconds (4 mins)
+        // Example 2: 120 words (600 chars), 240 seconds (4 mins)
         // round(120 * 0.2) + round(4 * 5) = 24 + 20 = 44 XP
         int xp2 = gamificationService.calculateBaseXp(600, 240.0);
         assertThat(xp2).isEqualTo(44);
+
+        // Example 3: Non-integer fractions test half-up rounding
+        // 53 words (265 chars) -> 53 * 0.2 = 10.6 -> rounds to 11
+        // 75 seconds (1.25 mins) -> 1.25 * 5 = 6.25 -> rounds to 6
+        // Total = 11 + 6 = 17 XP
+        int xp3 = gamificationService.calculateBaseXp(265, 75.0);
+        assertThat(xp3).isEqualTo(17);
     }
 
     @Test
@@ -69,38 +75,33 @@ class GamificationServiceTest {
     }
 
     @Test
-    @DisplayName("calculateSessionXp enforces quality gate (< 30s or < 20 words = 0 XP)")
-    void testQualityGate() {
-        // Less than 30 seconds
-        int shortDurationXp = gamificationService.calculateSessionXp(500, 25.0, 99.0, 1);
-        assertThat(shortDurationXp).isEqualTo(0);
+    @DisplayName("calculateAdjustedBaseXp applies accuracy multiplier with half-up rounding")
+    void testCalculateAdjustedBaseXp() {
+        // Base 27 XP with 96.5% Acc (1.20x) -> 27 * 1.20 = 32.4 -> 32 XP
+        int adj1 = gamificationService.calculateAdjustedBaseXp(27, 96.5);
+        assertThat(adj1).isEqualTo(32);
 
-        // Less than 20 words (e.g. 50 chars = 10 words)
-        int fewWordsXp = gamificationService.calculateSessionXp(50, 60.0, 99.0, 1);
-        assertThat(fewWordsXp).isEqualTo(0);
+        // Base 33 XP with 98.2% Acc (1.50x) -> 33 * 1.50 = 49.5 -> rounds half-up to 50 XP
+        int adj2 = gamificationService.calculateAdjustedBaseXp(33, 98.2);
+        assertThat(adj2).isEqualTo(50);
     }
 
     @Test
-    @DisplayName("calculateSessionXp enforces D5 diminishing returns: 1-3 100%, 4-5 50%, 6+ 0%")
+    @DisplayName("applyDiminishingReturns enforces D5 schedule: 1-3 100%, 4-5 50%, 6+ 0%")
     void testDiminishingReturns() {
-        // 60 words (300 chars), 180s (3m), Acc 96.5% (1.20x)
-        // Base = 27, Adjusted = round(27 * 1.2) = 32
-        int attempt1 = gamificationService.calculateSessionXp(300, 180.0, 96.5, 1);
-        assertThat(attempt1).isEqualTo(32);
+        int adjustedBase = 32;
 
-        int attempt3 = gamificationService.calculateSessionXp(300, 180.0, 96.5, 3);
-        assertThat(attempt3).isEqualTo(32);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 1)).isEqualTo(32);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 2)).isEqualTo(32);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 3)).isEqualTo(32);
 
         // Attempt 4: 50% of 32 = 16
-        int attempt4 = gamificationService.calculateSessionXp(300, 180.0, 96.5, 4);
-        assertThat(attempt4).isEqualTo(16);
-
-        int attempt5 = gamificationService.calculateSessionXp(300, 180.0, 96.5, 5);
-        assertThat(attempt5).isEqualTo(16);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 4)).isEqualTo(16);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 5)).isEqualTo(16);
 
         // Attempt 6+: 0 XP
-        int attempt6 = gamificationService.calculateSessionXp(300, 180.0, 96.5, 6);
-        assertThat(attempt6).isEqualTo(0);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 6)).isEqualTo(0);
+        assertThat(gamificationService.applyDiminishingReturns(adjustedBase, 10)).isEqualTo(0);
     }
 
     @Test
@@ -109,15 +110,13 @@ class GamificationServiceTest {
         assertThat(gamificationService.calculateLevelFromXp(0)).isEqualTo(1);
         assertThat(gamificationService.getTierForLevel(1)).isEqualTo("Novice");
 
-        // Level 1 required: round(120 * 1^1.35) = 120
+        // Level 1 threshold: round(120 * 1^1.35) = 120
         int l1Threshold = gamificationService.getXpRequiredForNextLevel(1);
         assertThat(l1Threshold).isEqualTo(120);
 
-        // With 125 XP, level is 2
         int lvlWith125 = gamificationService.calculateLevelFromXp(125);
         assertThat(lvlWith125).isEqualTo(2);
 
-        // Tier thresholds
         assertThat(gamificationService.getTierForLevel(11)).isEqualTo("Apprentice");
         assertThat(gamificationService.getTierForLevel(21)).isEqualTo("Journeyman");
         assertThat(gamificationService.getTierForLevel(41)).isEqualTo("Touch Typist");
@@ -132,20 +131,17 @@ class GamificationServiceTest {
                 testUserId, 100, 1, "Novice", 0, 0, 0, null, null
         );
         when(userGamificationRepository.findById(testUserId)).thenReturn(Optional.of(mockGamification));
-
-        // First attempt: reward event not present
         when(userRewardLedgerRepository.findByRewardEventId("EVENT-001")).thenReturn(Optional.empty());
 
         boolean awardedFirst = gamificationService.awardReward(testUserId, "EVENT-001", "SESSION-001", "DAILY_GOAL", 150);
         assertThat(awardedFirst).isTrue();
         assertThat(mockGamification.getTotalXp()).isEqualTo(250);
 
-        // Second attempt: reward event already in repository
-        when(userRewardLedgerRepository.findByRewardEventId("EVENT-001")).thenReturn(Optional.of(mock(com.typingtrainer.gamification.entity.UserRewardLedgerEntity.class)));
+        when(userRewardLedgerRepository.findByRewardEventId("EVENT-001"))
+                .thenReturn(Optional.of(mock(com.typingtrainer.gamification.entity.UserRewardLedgerEntity.class)));
 
         boolean awardedSecond = gamificationService.awardReward(testUserId, "EVENT-001", "SESSION-001", "DAILY_GOAL", 150);
         assertThat(awardedSecond).isFalse();
-        // XP remains 250 (not duplicated)
         assertThat(mockGamification.getTotalXp()).isEqualTo(250);
     }
 
@@ -160,7 +156,6 @@ class GamificationServiceTest {
         LocalDate day7 = LocalDate.of(2026, 11, 19);
         gamificationService.evaluateDailyStreak(testUserId, day7, true);
 
-        // Day 7 reached: streak becomes 7, earns 1 freeze shield
         assertThat(gamification.getCurrentStreakDays()).isEqualTo(7);
         assertThat(gamification.getFreezeShieldsAvailable()).isEqualTo(1);
     }

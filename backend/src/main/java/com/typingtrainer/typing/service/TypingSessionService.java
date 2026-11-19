@@ -1,6 +1,7 @@
 package com.typingtrainer.typing.service;
 
 import com.typingtrainer.common.response.PagedResponse;
+import com.typingtrainer.gamification.service.GamificationService;
 import com.typingtrainer.typing.dto.TypingSessionResponse;
 import com.typingtrainer.typing.dto.TypingSessionSubmissionRequest;
 import com.typingtrainer.typing.entity.TypingSessionEntity;
@@ -20,9 +21,12 @@ import java.util.UUID;
 public class TypingSessionService {
 
     private final TypingSessionRepository typingSessionRepository;
+    private final GamificationService gamificationService;
 
-    public TypingSessionService(TypingSessionRepository typingSessionRepository) {
+    public TypingSessionService(TypingSessionRepository typingSessionRepository,
+                                GamificationService gamificationService) {
         this.typingSessionRepository = typingSessionRepository;
+        this.gamificationService = gamificationService;
     }
 
     public PagedResponse<TypingSessionResponse> getRecentSessions(int page, int size, String sort) {
@@ -42,6 +46,24 @@ public class TypingSessionService {
                 .map(this::toResponse);
     }
 
+    /**
+     * Determines whether a test session qualifies as an official benchmark for Personal Best records
+     * under approved D4 specifications:
+     * 1. Benchmark Duration: Official 60-Second Standard Benchmark (testDurationTarget == 60)
+     * 2. Standard Corpus: Common English Words or Sentences (corpusType != "CUSTOM")
+     * 3. Accuracy Gate: >= 95.0%
+     * 4. Pause Integrity Limits: <= 2 pause events AND <= 60.0s cumulative paused duration.
+     */
+    public boolean evaluateBenchmarkEligibility(double accuracy, int durationTarget, String corpusType,
+                                                int pauseCount, double cumulativePauseSeconds) {
+        if (accuracy < 95.0) return false;
+        if (durationTarget != 60) return false;
+        if ("CUSTOM".equalsIgnoreCase(corpusType)) return false;
+        if (pauseCount > 2) return false;
+        if (cumulativePauseSeconds > 60.0) return false;
+        return true;
+    }
+
     @Transactional
     public TypingSessionResponse submitSession(TypingSessionSubmissionRequest request) {
         UUID sessionId = UUID.fromString(request.sessionId());
@@ -53,6 +75,19 @@ public class TypingSessionService {
         }
 
         String passage = request.passage() != null ? request.passage() : "";
+        String sessionMode = request.sessionMode() != null ? request.sessionMode() : "TYPING_TEST";
+        int durationTarget = request.testDurationTarget() != null ? request.testDurationTarget() : 60;
+        String corpusType = request.corpusType() != null ? request.corpusType() : "STANDARD";
+        int pauseCount = request.pauseCount() != null ? request.pauseCount() : 0;
+        double cumulativePause = request.cumulativePauseSeconds() != null ? request.cumulativePauseSeconds() : 0.0;
+
+        boolean isOfficial = evaluateBenchmarkEligibility(
+                request.accuracy(), durationTarget, corpusType, pauseCount, cumulativePause
+        );
+
+        int baseXp = gamificationService.calculateBaseXp(request.correctCharacters(), request.durationSeconds());
+        int adjustedXp = gamificationService.calculateAdjustedBaseXp(baseXp, request.accuracy());
+
         TypingSessionEntity entity = new TypingSessionEntity(
                 sessionId,
                 request.grossWpm(),
@@ -63,10 +98,25 @@ public class TypingSessionService {
                 request.correctCharacters(),
                 request.durationSeconds(),
                 passage,
-                Instant.now()
+                Instant.now(),
+                sessionMode,
+                durationTarget,
+                isOfficial,
+                adjustedXp
         );
 
         TypingSessionEntity saved = typingSessionRepository.save(entity);
+
+        // Record reward in immutable reward ledger
+        String rewardEventId = "SESSION_" + sessionId;
+        gamificationService.awardReward(
+                GamificationService.DEFAULT_USER_ID,
+                rewardEventId,
+                sessionId.toString(),
+                "SESSION_COMPLETION",
+                adjustedXp
+        );
+
         return toResponse(saved);
     }
 

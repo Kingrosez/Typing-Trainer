@@ -1,6 +1,7 @@
 package com.typingtrainer.recommendation.service;
 
 import com.typingtrainer.recommendation.dto.WeakKeyRecommendation;
+import com.typingtrainer.telemetry.entity.KeyTelemetryEntity;
 import com.typingtrainer.telemetry.repository.KeyTelemetryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,9 +12,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,35 +52,35 @@ class RecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("getRecommendations ranks weak keys by WPI = ErrorRate * ln(Opportunities + 1)")
-    void testWpiRanking() {
-        // Mock 3 keys:
-        // Key 'P': 80 opps, 8 errors (10.0% errRate) -> WPI = 10.0 * ln(81) = 43.94
-        // Key 'B': 20 opps, 2 errors (10.0% errRate) -> WPI = 10.0 * ln(21) = 30.45
-        // Key 'E': 100 opps, 2 errors (2.0% errRate) -> Mastered (not weak)
+    @DisplayName("getRecommendations evaluates most recent 100 eligible opportunities and ranks by WPI")
+    void testWpiRankingWith100OpportunityWindow() {
+        // Mock distinct keys: "p", "b", "e"
+        when(keyTelemetryRepository.findObservedKeysSince(any(Instant.class)))
+                .thenReturn(List.of("p", "b", "e"));
 
-        KeyTelemetryRepository.KeySummaryProjection pProj = createProj("p", 80L, 8L);
-        KeyTelemetryRepository.KeySummaryProjection bProj = createProj("b", 20L, 2L);
-        KeyTelemetryRepository.KeySummaryProjection eProj = createProj("e", 100L, 2L);
+        // Key 'p': two recent sessions totaling 80 opps, 8 errors (10.0% errRate) -> WPI = 10.0 * ln(81) = 43.9
+        KeyTelemetryEntity p1 = new KeyTelemetryEntity(UUID.randomUUID(), "s1", "p", 50, 5, 200, Instant.now());
+        KeyTelemetryEntity p2 = new KeyTelemetryEntity(UUID.randomUUID(), "s2", "p", 30, 3, 200, Instant.now());
+        when(keyTelemetryRepository.findRecentForKeySince(eq("p"), any(Instant.class)))
+                .thenReturn(List.of(p1, p2));
 
-        when(keyTelemetryRepository.aggregateKeyTelemetrySince(any(Instant.class)))
-                .thenReturn(List.of(bProj, pProj, eProj));
+        // Key 'b': one session of 20 opps, 2 errors (10.0% errRate) -> WPI = 10.0 * ln(21) = 30.4
+        KeyTelemetryEntity b1 = new KeyTelemetryEntity(UUID.randomUUID(), "s3", "b", 20, 2, 250, Instant.now());
+        when(keyTelemetryRepository.findRecentForKeySince(eq("b"), any(Instant.class)))
+                .thenReturn(List.of(b1));
+
+        // Key 'e': one session with 120 opps, capped to 100 opps, 2 errors -> 2.0% errRate -> Mastered
+        KeyTelemetryEntity e1 = new KeyTelemetryEntity(UUID.randomUUID(), "s4", "e", 120, 2, 150, Instant.now());
+        when(keyTelemetryRepository.findRecentForKeySince(eq("e"), any(Instant.class)))
+                .thenReturn(List.of(e1));
 
         List<WeakKeyRecommendation> recommendations = recommendationService.getRecommendations();
 
-        // Only P and B should be recommended, with P ranked ahead of B due to higher WPI
+        // Only P and B should be in Weak recommendations; P has higher WPI than B
         assertThat(recommendations).hasSize(2);
         assertThat(recommendations.get(0).keyChar()).isEqualTo("p");
+        assertThat(recommendations.get(0).opportunities()).isEqualTo(80);
         assertThat(recommendations.get(0).wpi()).isGreaterThan(recommendations.get(1).wpi());
         assertThat(recommendations.get(1).keyChar()).isEqualTo("b");
-    }
-
-    private KeyTelemetryRepository.KeySummaryProjection createProj(String key, Long opps, Long errs) {
-        return new KeyTelemetryRepository.KeySummaryProjection() {
-            @Override public String getKeyChar() { return key; }
-            @Override public Long getTotalOpportunities() { return opps; }
-            @Override public Long getTotalErrors() { return errs; }
-            @Override public Long getTotalLatencyMs() { return 500L; }
-        };
     }
 }

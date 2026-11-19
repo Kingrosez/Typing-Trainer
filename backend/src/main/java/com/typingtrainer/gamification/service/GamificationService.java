@@ -9,11 +9,11 @@ import com.typingtrainer.profile.repository.UserProfileRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -38,7 +38,6 @@ public class GamificationService {
 
     public UserGamificationEntity getOrCreateGamification(UUID userId) {
         return userGamificationRepository.findById(userId).orElseGet(() -> {
-            // Ensure profile exists
             userProfileRepository.findById(userId).orElseGet(() -> {
                 UserProfileEntity newProfile = new UserProfileEntity(userId, "Typist", Instant.now(), Instant.now());
                 return userProfileRepository.save(newProfile);
@@ -60,15 +59,23 @@ public class GamificationService {
     }
 
     /**
-     * Calculates deterministic Base Effort XP according to D3/D5:
-     * XP_base = round(WordsTyped * 0.2) + round((ActiveSeconds / 60) * 5)
-     * WordsTyped is correctCharacters / 5.
+     * Calculates deterministic Base Effort XP according to D5:
+     * XP_base = round(WordsTyped * 0.2) + round(ActiveMinutes * 5)
+     * WordsTyped is correctCharacters / 5.0.
+     * Rounding: Word component and active-minute component are rounded separately using half-up rounding.
      */
     public int calculateBaseXp(int correctCharacters, double activeSeconds) {
-        double wordsTyped = correctCharacters / 5.0;
-        int wordComponent = (int) Math.round(wordsTyped * 0.2);
-        int timeComponent = (int) Math.round((activeSeconds / 60.0) * 5.0);
-        return wordComponent + timeComponent;
+        BigDecimal wordsTyped = BigDecimal.valueOf(correctCharacters)
+                .divide(BigDecimal.valueOf(5.0), 6, RoundingMode.HALF_UP);
+        BigDecimal wordComponent = wordsTyped.multiply(BigDecimal.valueOf(0.2))
+                .setScale(0, RoundingMode.HALF_UP);
+
+        BigDecimal activeMinutes = BigDecimal.valueOf(activeSeconds)
+                .divide(BigDecimal.valueOf(60.0), 6, RoundingMode.HALF_UP);
+        BigDecimal timeComponent = activeMinutes.multiply(BigDecimal.valueOf(5.0))
+                .setScale(0, RoundingMode.HALF_UP);
+
+        return wordComponent.intValue() + timeComponent.intValue();
     }
 
     /**
@@ -94,36 +101,39 @@ public class GamificationService {
     }
 
     /**
-     * Applies accuracy multiplier and D5 daily diminishing returns.
-     * Quality gate: if activeSeconds < 30 OR words < 20 -> 0 XP.
-     * Diminishing returns:
-     * Attempts 1-3: 100% of adjusted base XP.
-     * Attempts 4-5: 50% of adjusted base XP.
-     * Attempts 6+: 0 XP.
+     * Calculates adjusted base XP by applying the accuracy multiplier with half-up rounding:
+     * XP_adjusted = round(XP_base * Multiplier_accuracy).
      */
-    public int calculateSessionXp(int correctCharacters, double activeSeconds, double accuracyPercentage, int attemptNumberToday) {
-        double wordsTyped = correctCharacters / 5.0;
-        if (activeSeconds < 30.0 || wordsTyped < 20.0) {
-            return 0; // Quality gate
-        }
-
-        int baseXp = calculateBaseXp(correctCharacters, activeSeconds);
+    public int calculateAdjustedBaseXp(int baseXp, double accuracyPercentage) {
         double multiplier = getAccuracyMultiplier(accuracyPercentage);
-        int adjustedBase = (int) Math.round(baseXp * multiplier);
+        return BigDecimal.valueOf(baseXp)
+                .multiply(BigDecimal.valueOf(multiplier))
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
+    }
 
+    /**
+     * Applies D5 daily diminishing returns scoped to lesson ID and calendar day:
+     * Attempts 1-3 of the lesson ID: 100% of adjusted base XP.
+     * Attempts 4-5 of the lesson ID: 50% of adjusted base XP (round half-up).
+     * Attempts 6+ of the lesson ID: 0 XP.
+     */
+    public int applyDiminishingReturns(int adjustedBaseXp, int attemptNumberToday) {
         if (attemptNumberToday <= 3) {
-            return adjustedBase;
+            return adjustedBaseXp;
         } else if (attemptNumberToday <= 5) {
-            return (int) Math.round(adjustedBase * 0.5);
+            return BigDecimal.valueOf(adjustedBaseXp)
+                    .multiply(BigDecimal.valueOf(0.5))
+                    .setScale(0, RoundingMode.HALF_UP)
+                    .intValue();
         } else {
             return 0;
         }
     }
 
     /**
-     * Evaluates level threshold using the approved quadratic curve:
+     * Calculates level threshold using the quadratic curve documented in D1:
      * XP_req(L) = round(120 * L^1.35) for level L.
-     * Calculates cumulative XP and returns corresponding level.
      */
     public int calculateLevelFromXp(int totalXp) {
         if (totalXp <= 0) return 1;
@@ -141,7 +151,9 @@ public class GamificationService {
     }
 
     public int getXpRequiredForNextLevel(int currentLevel) {
-        return (int) Math.round(120.0 * Math.pow(currentLevel, 1.35));
+        return BigDecimal.valueOf(120.0 * Math.pow(currentLevel, 1.35))
+                .setScale(0, RoundingMode.HALF_UP)
+                .intValue();
     }
 
     public int getXpProgressInCurrentLevel(int totalXp, int currentLevel) {
@@ -152,9 +164,6 @@ public class GamificationService {
         return Math.max(0, totalXp - cumulativeXpBefore);
     }
 
-    /**
-     * Maps level to D1/D3 Mastery Tier.
-     */
     public String getTierForLevel(int level) {
         if (level >= 81) return "Grandmaster";
         if (level >= 61) return "Keystroke Pro";
@@ -166,7 +175,7 @@ public class GamificationService {
 
     /**
      * Adds XP idempotently using user_reward_ledger.
-     * Returns true if newly awarded, false if already awarded.
+     * Returns true if newly awarded, false if duplicate.
      */
     public boolean awardReward(UUID userId, String rewardEventId, String sessionId, String rewardType, int xpAmount) {
         if (userRewardLedgerRepository.findByRewardEventId(rewardEventId).isPresent()) {
@@ -195,9 +204,6 @@ public class GamificationService {
         return true;
     }
 
-    /**
-     * Evaluates daily goal completion and awards +150 XP bonus if newly met today.
-     */
     public boolean checkAndAwardDailyGoalBonus(UUID userId, LocalDate localDate, double totalPracticeSecondsToday, int goalMinutes) {
         double goalSeconds = goalMinutes * 60.0;
         if (totalPracticeSecondsToday < goalSeconds) {
@@ -208,11 +214,6 @@ public class GamificationService {
         return awardReward(userId, eventId, null, "DAILY_GOAL_COMPLETION", DAILY_GOAL_BONUS_XP);
     }
 
-    /**
-     * Updates streak based on daily goal completion and calendar continuity.
-     * One freeze shield earned per 7 days of consecutive practice (max 2).
-     * If user misses 1 day and has a freeze shield, shield is consumed and streak is preserved.
-     */
     public void evaluateDailyStreak(UUID userId, LocalDate today, boolean goalMetToday) {
         UserGamificationEntity gamification = getOrCreateGamification(userId);
         if (!goalMetToday) {
@@ -221,35 +222,30 @@ public class GamificationService {
 
         String lastDateStr = gamification.getLastPracticeDate();
         if (lastDateStr == null) {
-            // First ever practice day
             gamification.setCurrentStreakDays(1);
             gamification.setLongestStreakDays(Math.max(1, gamification.getLongestStreakDays()));
             gamification.setLastPracticeDate(today.toString());
         } else {
             LocalDate lastDate = LocalDate.parse(lastDateStr);
             if (lastDate.equals(today)) {
-                // Already updated today
                 return;
             } else if (lastDate.plusDays(1).equals(today)) {
-                // Consecutive day
                 int newStreak = gamification.getCurrentStreakDays() + 1;
                 gamification.setCurrentStreakDays(newStreak);
                 gamification.setLongestStreakDays(Math.max(newStreak, gamification.getLongestStreakDays()));
                 gamification.setLastPracticeDate(today.toString());
 
-                // Check 7-day shield award: 1 shield per 7 days of streak (up to max 2)
                 if (newStreak % 7 == 0 && gamification.getFreezeShieldsAvailable() < MAX_FREEZE_SHIELDS) {
                     gamification.setFreezeShieldsAvailable(gamification.getFreezeShieldsAvailable() + 1);
                 }
             } else if (lastDate.plusDays(2).equals(today) && gamification.getFreezeShieldsAvailable() > 0) {
-                // Missed exactly 1 day, consume 1 shield to protect streak
+                // Preserved streak: 1 shield deployed
                 gamification.setFreezeShieldsAvailable(gamification.getFreezeShieldsAvailable() - 1);
                 int newStreak = gamification.getCurrentStreakDays() + 1;
                 gamification.setCurrentStreakDays(newStreak);
                 gamification.setLongestStreakDays(Math.max(newStreak, gamification.getLongestStreakDays()));
                 gamification.setLastPracticeDate(today.toString());
             } else {
-                // Streak broken
                 gamification.setCurrentStreakDays(1);
                 gamification.setLastPracticeDate(today.toString());
             }
