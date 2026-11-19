@@ -14,7 +14,7 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        // Restrictive CORS for local API - only allow Tauri and local dev origins
+        // Restrictive CORS for local loopback API - only allow Tauri and local dev origins
         config.setAllowedOrigins(List.of(
                 "http://localhost:1420",
                 "http://127.0.0.1:1420",
@@ -22,12 +22,19 @@ public class CorsConfig {
                 "https://tauri.localhost"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With"));
+        config.setAllowedHeaders(List.of(
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Request-Token",
+                "X-Requested-With",
+                "Authorization"
+        ));
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/v1/**", config);
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }

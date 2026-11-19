@@ -2,24 +2,44 @@ spring:
   application:
     name: typing-trainer
   datasource:
-    url: jdbc:sqlite:file:${user.home}/AppData/Local/TypingTrainer/data/typing-trainer.db
+    url: jdbc:sqlite:${TYPING_TRAINER_DB_PATH:${user.home}/AppData/Local/TypingTrainer/data/typing-trainer.db}
     driver-class-name: org.sqlite.JDBC
     hikari:
       maximum-pool-size: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-init-sql: PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000;
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
   flyway:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 2MB
 
 server:
-  port: 8080
+  port: ${PORT:0}
   address: 127.0.0.1
+  max-http-request-header-size: 8KB
+
+typingtrainer:
+  security:
+    request-token: ${TYPING_TRAINER_AUTH_TOKEN:}
+  handshake:
+    file: ${TYPING_TRAINER_HANDSHAKE_FILE:}
 
 logging:
   level:
     root: INFO
     org.springframework: WARN
+    org.hibernate: WARN
+    com.typingtrainer: INFO

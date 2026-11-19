@@ -1,8 +1,24 @@
 import { useTheme } from "../../app/providers/ThemeProvider";
-import { Database, ShieldCheck, Zap } from "lucide-react";
+import { useBackendHealth } from "../../hooks/useBackendHealth";
+import { Database, ShieldCheck, Zap, Activity } from "lucide-react";
 
 export function StatusBar() {
   const { theme } = useTheme();
+  const { state: backendState, port, error: backendError } = useBackendHealth();
+
+  const getStatusColor = () => {
+    switch (backendState) {
+      case "Online":
+        return "text-emerald-500";
+      case "Starting":
+      case "Reconnecting":
+        return "text-amber-500 animate-pulse";
+      case "Offline":
+      case "Error":
+      default:
+        return "text-rose-500";
+    }
+  };
 
   return (
     <footer
@@ -54,6 +70,20 @@ export function StatusBar() {
 
       {/* Right: Runtime State & Persistence */}
       <div className="flex items-center space-x-3 font-mono text-[10px]">
+        {/* Backend State */}
+        <div
+          className="flex items-center space-x-1"
+          title={backendError ? `Backend error: ${backendError}` : `Local backend status: ${backendState}`}
+        >
+          <Activity className={`w-3 h-3 ${getStatusColor()}`} />
+          <span className="text-foreground/80">
+            Backend: <span className={getStatusColor()}>{backendState}</span>
+            {port ? ` (${port})` : ""}
+          </span>
+        </div>
+
+        <span className="text-border">•</span>
+
         {/* Local Persistence Status */}
         <div
           className="flex items-center space-x-1 text-emerald-600 dark:text-emerald-400"
