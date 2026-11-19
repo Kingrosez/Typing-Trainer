@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: typing-trainer-test
+  datasource:
+    url: jdbc:sqlite:file:target/test-typing-trainer.db
+    driver-class-name: org.sqlite.JDBC
+    hikari:
+      maximum-pool-size: 1
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+server:
+  port: 0
+  address: 127.0.0.1
