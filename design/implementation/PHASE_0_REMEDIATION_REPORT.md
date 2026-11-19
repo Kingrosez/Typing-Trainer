@@ -144,5 +144,6 @@ All verification commands were executed directly against the local repository an
 
 ## 7. Initial Git Baseline Commit
 - **Branch:** `master`
-- **Baseline Commit Hash:** *(Recorded immediately upon commit execution)*
+- **Baseline Commit Hash:** `e227e15eb3814845d6b18d0441588864fd63b95b`
 - **Commit Message:** `feat: complete phase 0 foundation remediation and baseline`
+- **Total Tracked Files:** 250 files committed (43,143 insertions) cleanly excluding build directories (`target/`, `dist/`, `node_modules/`), test database files (`*.db`), and credentials.
