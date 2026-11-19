@@ -43,6 +43,18 @@ public class TypingSessionEntity {
     @Column(name = "completed_at", nullable = false, columnDefinition = "TEXT")
     private Instant completedAt;
 
+    @Column(name = "session_mode", nullable = false)
+    private String sessionMode = "TYPING_TEST";
+
+    @Column(name = "test_duration_target", nullable = false)
+    private int testDurationTarget = 60;
+
+    @Column(name = "is_official_benchmark", nullable = false)
+    private boolean officialBenchmark = true;
+
+    @Column(name = "xp_earned", nullable = false)
+    private int xpEarned = 0;
+
     protected TypingSessionEntity() {
         // JPA
     }
@@ -50,6 +62,15 @@ public class TypingSessionEntity {
     public TypingSessionEntity(UUID id, double grossWpm, double netWpm, double accuracy,
                                 int totalErrors, int rawCharacters, int correctCharacters,
                                 double durationSeconds, String passage, Instant completedAt) {
+        this(id, grossWpm, netWpm, accuracy, totalErrors, rawCharacters, correctCharacters,
+                durationSeconds, passage, completedAt, "TYPING_TEST", 60, true, 0);
+    }
+
+    public TypingSessionEntity(UUID id, double grossWpm, double netWpm, double accuracy,
+                                int totalErrors, int rawCharacters, int correctCharacters,
+                                double durationSeconds, String passage, Instant completedAt,
+                                String sessionMode, int testDurationTarget, boolean officialBenchmark,
+                                int xpEarned) {
         this.id = id;
         this.grossWpm = grossWpm;
         this.netWpm = netWpm;
@@ -60,6 +81,10 @@ public class TypingSessionEntity {
         this.durationSeconds = durationSeconds;
         this.passage = passage;
         this.completedAt = completedAt;
+        this.sessionMode = sessionMode != null ? sessionMode : "TYPING_TEST";
+        this.testDurationTarget = testDurationTarget > 0 ? testDurationTarget : 60;
+        this.officialBenchmark = officialBenchmark;
+        this.xpEarned = xpEarned;
     }
 
     public UUID getId() { return id; }
@@ -72,4 +97,8 @@ public class TypingSessionEntity {
     public double getDurationSeconds() { return durationSeconds; }
     public String getPassage() { return passage; }
     public Instant getCompletedAt() { return completedAt; }
+    public String getSessionMode() { return sessionMode; }
+    public int getTestDurationTarget() { return testDurationTarget; }
+    public boolean isOfficialBenchmark() { return officialBenchmark; }
+    public int getXpEarned() { return xpEarned; }
 }
