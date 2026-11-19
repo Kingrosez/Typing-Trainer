@@ -32,8 +32,8 @@ export function Achievements() {
       title: "Consistent Habit",
       description: "Maintain an active 7-day typing practice streak",
       icon: Flame,
-      unlocked: true,
-      progress: "7/7 Days",
+      unlocked: false,
+      progress: "0/7 Days",
       tier: "Streak",
     },
     {

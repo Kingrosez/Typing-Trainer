@@ -125,28 +125,28 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                   <Award className="w-3 h-3" />
                 </div>
                 <span className="text-xs font-semibold text-foreground">
-                  Level 14 Typist
+                  Level 1 • Novice
                 </span>
               </div>
               <div
-                className="flex items-center space-x-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[11px] font-bold"
-                title="Active 7-day practice streak"
+                className="flex items-center space-x-1 px-1.5 py-0.5 rounded-md bg-secondary text-muted-foreground font-mono text-[11px] font-medium"
+                title="Daily practice streak unstarted"
               >
-                <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-bounce" />
-                <span>7</span>
+                <Flame className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>0d</span>
               </div>
             </div>
 
             {/* XP Progress Bar */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
-                <span>XP Progress</span>
-                <span>68%</span>
+                <span>XP: 0 / 100</span>
+                <span>0%</span>
               </div>
               <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300"
-                  style={{ width: "68%" }}
+                  className="h-full rounded-full bg-primary/40 transition-all duration-300"
+                  style={{ width: "0%" }}
                 />
               </div>
             </div>
@@ -154,13 +154,13 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         ) : (
           <div
             className="flex flex-col items-center justify-center py-2 mb-2 space-y-1 text-center"
-            title="Level 14 Typist • 7-day streak (68% XP)"
+            title="Level 1 Novice • 0d streak (0% XP)"
           >
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
-              <Flame className="w-4 h-4 fill-amber-500" />
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary text-muted-foreground border border-border">
+              <Flame className="w-4 h-4 text-muted-foreground" />
             </div>
-            <span className="text-[10px] font-mono font-bold text-amber-500">
-              7d
+            <span className="text-[10px] font-mono text-muted-foreground">
+              0d
             </span>
           </div>
         )}

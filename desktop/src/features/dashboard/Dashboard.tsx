@@ -45,18 +45,18 @@ export default function Dashboard() {
         <Card className="border border-border bg-gradient-to-br from-card to-secondary/30">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-mono font-medium text-amber-500 flex items-center space-x-1">
-                <Flame className="w-4 h-4 fill-amber-500 text-amber-500 animate-pulse" />
+              <CardDescription className="text-xs font-mono font-medium text-muted-foreground flex items-center space-x-1">
+                <Flame className="w-4 h-4 text-muted-foreground" />
                 <span>Daily Practice Streak</span>
               </CardDescription>
-              <span className="text-xs font-mono font-bold text-amber-500">Day 7</span>
+              <span className="text-xs font-mono font-medium text-muted-foreground">0 Days</span>
             </div>
             <CardTitle className="text-2xl font-bold font-mono">
-              7 <span className="text-sm font-sans font-normal text-muted-foreground">Days Active</span>
+              0 <span className="text-sm font-sans font-normal text-muted-foreground">Days Active</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>Practice today to protect your weekly streak multiplier.</p>
+            <p>Complete a session to start your daily practice streak.</p>
           </CardContent>
         </Card>
 
@@ -64,18 +64,18 @@ export default function Dashboard() {
         <Card className="border border-border bg-gradient-to-br from-card to-secondary/30">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-mono font-medium text-blue-500 flex items-center space-x-1">
-                <Zap className="w-4 h-4 text-blue-500" />
+              <CardDescription className="text-xs font-mono font-medium text-primary flex items-center space-x-1">
+                <Zap className="w-4 h-4 text-primary" />
                 <span>Speed Benchmark</span>
               </CardDescription>
-              <span className="text-xs font-mono font-bold text-blue-500">60s Test</span>
+              <span className="text-xs font-mono font-medium text-muted-foreground">Unranked</span>
             </div>
             <CardTitle className="text-2xl font-bold font-mono">
               -- <span className="text-sm font-sans font-normal text-muted-foreground">WPM</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>Ready to record your baseline typing speed.</p>
+            <p>No tests recorded yet. Start a test to record your baseline.</p>
           </CardContent>
         </Card>
 
@@ -87,14 +87,14 @@ export default function Dashboard() {
                 <Sparkles className="w-4 h-4 text-emerald-500" />
                 <span>Typist Rank</span>
               </CardDescription>
-              <span className="text-xs font-mono font-bold text-emerald-500">Tier 2</span>
+              <span className="text-xs font-mono font-medium text-muted-foreground">Tier 1</span>
             </div>
             <CardTitle className="text-2xl font-bold font-mono">
-              Level 14 <span className="text-sm font-sans font-normal text-muted-foreground">Apprentice</span>
+              Level 1 <span className="text-sm font-sans font-normal text-muted-foreground">Novice</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>320 XP remaining until Level 15 Journeyman.</p>
+            <p>0 / 100 XP to reach Level 2 Apprentice.</p>
           </CardContent>
         </Card>
       </div>

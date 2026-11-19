@@ -1,37 +1,51 @@
 import { PageHeader } from "../components/layout/PageHeader";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Code2, Terminal, Cpu, FileCode2, Braces } from "lucide-react";
+import { Code2, Cpu, FileCode2, Braces, Database, Terminal, FileJson } from "lucide-react";
 
 export function DeveloperMode() {
-  const stacks = [
+  const tracks = [
     {
-      name: "TypeScript & React",
-      icon: FileCode2,
-      description: "JSX tags, generic types, arrow functions, and object destructuring.",
-      snippets: "24 Snippets",
-      symbolFocus: "< > { } [ ] => :",
-    },
-    {
-      name: "Rust & Systems",
-      icon: Cpu,
-      description: "Lifetimes, pattern matching, match expressions, and macro syntax.",
-      snippets: "20 Snippets",
-      symbolFocus: "& ' :: -> => | !",
-    },
-    {
-      name: "Java & Spring",
+      name: "Java",
       icon: Braces,
-      description: "Annotations, lambda streams, class hierarchies, and method references.",
+      description: "Static typing, object-oriented hierarchies, lambda streams, annotations, and semicolons.",
       snippets: "18 Snippets",
-      symbolFocus: "@ ( ) . ; :: ->",
+      symbolFocus: "@ ( ) . ; :: -> { }",
     },
     {
-      name: "Bash & CLI Scripts",
+      name: "TypeScript",
+      icon: FileCode2,
+      description: "Type annotations, generics, interfaces, union types, and modern arrow function syntax.",
+      snippets: "24 Snippets",
+      symbolFocus: "< > { } [ ] => : ;",
+    },
+    {
+      name: "JavaScript",
+      icon: Code2,
+      description: "Dynamic scripting, closures, async/await promises, object destructuring, and template literals.",
+      snippets: "22 Snippets",
+      symbolFocus: "` $ { } ( ) => ... ;",
+    },
+    {
+      name: "Python",
       icon: Terminal,
-      description: "Command pipelines, flags, environment variables, and shell redirects.",
+      description: "Semantic indentation, colons, list comprehensions, decorators, and snake_case naming.",
+      snippets: "20 Snippets",
+      symbolFocus: ": [ ] ( ) _ # @",
+    },
+    {
+      name: "SQL",
+      icon: Database,
+      description: "Relational database queries, uppercase DDL/DML keywords, joins, and aggregates.",
       snippets: "16 Snippets",
-      symbolFocus: "$ | > < - -- ;",
+      symbolFocus: ", ( ) ' ; * = != >=",
+    },
+    {
+      name: "Rust",
+      icon: Cpu,
+      description: "Memory safety, explicit lifetimes, pattern matching, macro calls, and dense operators.",
+      snippets: "20 Snippets",
+      symbolFocus: "& ' :: -> => | ! { }",
     },
   ];
 
@@ -39,18 +53,19 @@ export function DeveloperMode() {
     <div className="space-y-6">
       <PageHeader
         title="Developer Mode"
-        subtitle="Programming syntax training tailored for software engineers and code typing muscle memory."
+        subtitle="Programming syntax and symbol muscle memory drills across the approved D7 language tracks."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {stacks.map((s, idx) => {
+      {/* 6 Approved Language Tracks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {tracks.map((s, idx) => {
           const Icon = s.icon;
           return (
-            <Card key={idx} className="border border-border hover:border-primary/50 transition-all shadow-xs">
+            <Card key={idx} className="border border-border hover:border-primary/50 transition-all shadow-xs flex flex-col justify-between">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
-                    Symbols: {s.symbolFocus}
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-mono font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">
+                    {s.symbolFocus}
                   </span>
                   <span className="text-xs font-mono text-muted-foreground">{s.snippets}</span>
                 </div>
@@ -62,8 +77,8 @@ export function DeveloperMode() {
                   {s.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button variant="outline" size="sm" className="w-full flex items-center space-x-2">
+              <CardContent className="pt-0">
+                <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2">
                   <Code2 className="w-3.5 h-3.5" />
                   <span>Launch Syntax Arena</span>
                 </Button>
@@ -71,6 +86,19 @@ export function DeveloperMode() {
             </Card>
           );
         })}
+      </div>
+
+      {/* Data Formats Note (D7 Specification) */}
+      <div className="p-3.5 rounded-lg border border-border/80 bg-secondary/30 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center space-x-2.5">
+          <FileJson className="w-4 h-4 text-primary shrink-0" />
+          <span>
+            <strong className="text-foreground font-medium">Data Format Exercises:</strong> JSON drills (bracket nesting, key-value quotes) are available as exercise categories bridging syntax precision.
+          </span>
+        </div>
+        <span className="text-[10px] font-mono text-muted-foreground/80 shrink-0 hidden sm:inline">
+          D7 Code Studio
+        </span>
       </div>
     </div>
   );
