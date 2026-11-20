@@ -45,7 +45,8 @@ class TypingSessionServiceTest {
     void getRecentSessions_returnsPagedResponse() {
         UUID id = UUID.randomUUID();
         TypingSessionEntity entity = new TypingSessionEntity(
-                id, 70.0, 65.0, 96.0, 2, 350, 336, 60.0, "sample text", Instant.now()
+                id, 70.0, 65.0, 96.0, 2, 350, 336, 60.0, "sample text", Instant.now(),
+                "TYPING_TEST", 60, true, 45
         );
         Page<TypingSessionEntity> page = new PageImpl<>(List.of(entity));
 
@@ -54,7 +55,11 @@ class TypingSessionServiceTest {
         PagedResponse<TypingSessionResponse> result = service.getRecentSessions(0, 10, "completedAt,desc");
 
         assertThat(result.items()).hasSize(1);
-        assertThat(result.items().get(0).id()).isEqualTo(id.toString());
+        TypingSessionResponse item = result.items().get(0);
+        assertThat(item.id()).isEqualTo(id.toString());
+        assertThat(item.sessionMode()).isEqualTo("TYPING_TEST");
+        assertThat(item.xpEarned()).isEqualTo(45);
+        assertThat(item.isOfficialBenchmark()).isTrue();
         assertThat(result.totalItems()).isEqualTo(1);
     }
 
@@ -131,26 +136,32 @@ class TypingSessionServiceTest {
     }
 
     @Test
-    @DisplayName("evaluateBenchmarkEligibility enforces D4 rules: 60s, non-custom corpus, >= 95% Acc, <= 2 pauses, <= 60s paused")
+    @DisplayName("evaluateBenchmarkEligibility enforces D4 rules for 15s sprint and 60s benchmark separately")
     void testBenchmarkEligibilityRules() {
-        // Official qualifying run
+        // Official qualifying 60s run
         assertThat(service.evaluateBenchmarkEligibility(95.0, 60, "STANDARD", 2, 59.9)).isTrue();
         assertThat(service.evaluateBenchmarkEligibility(98.5, 60, "COMMON_WORDS", 0, 0.0)).isTrue();
 
-        // Disqualified: accuracy < 95.0%
+        // Official qualifying 15s sprint run (does not require 60s pause limits)
+        assertThat(service.evaluateBenchmarkEligibility(95.0, 15, "STANDARD", 0, 0.0)).isTrue();
+        assertThat(service.evaluateBenchmarkEligibility(99.0, 15, "COMMON_WORDS", 0, 0.0)).isTrue();
+
+        // Disqualified: accuracy < 95.0% for both 60s and 15s
         assertThat(service.evaluateBenchmarkEligibility(94.9, 60, "STANDARD", 0, 0.0)).isFalse();
+        assertThat(service.evaluateBenchmarkEligibility(94.9, 15, "STANDARD", 0, 0.0)).isFalse();
 
-        // Disqualified: duration != 60s (e.g. 15s sprint or 30s test)
-        assertThat(service.evaluateBenchmarkEligibility(99.0, 15, "STANDARD", 0, 0.0)).isFalse();
+        // Disqualified: unapproved duration (e.g. 30s, 45s, 120s)
         assertThat(service.evaluateBenchmarkEligibility(99.0, 30, "STANDARD", 0, 0.0)).isFalse();
+        assertThat(service.evaluateBenchmarkEligibility(99.0, 45, "STANDARD", 0, 0.0)).isFalse();
 
-        // Disqualified: Custom corpus
+        // Disqualified: Custom corpus for both 60s and 15s
         assertThat(service.evaluateBenchmarkEligibility(99.0, 60, "CUSTOM", 0, 0.0)).isFalse();
+        assertThat(service.evaluateBenchmarkEligibility(99.0, 15, "CUSTOM", 0, 0.0)).isFalse();
 
-        // Disqualified: pause count > 2
+        // Disqualified 60s: pause count > 2
         assertThat(service.evaluateBenchmarkEligibility(99.0, 60, "STANDARD", 3, 10.0)).isFalse();
 
-        // Disqualified: cumulative pause > 60.0 seconds
+        // Disqualified 60s: cumulative pause > 60.0 seconds
         assertThat(service.evaluateBenchmarkEligibility(99.0, 60, "STANDARD", 1, 60.1)).isFalse();
     }
 }

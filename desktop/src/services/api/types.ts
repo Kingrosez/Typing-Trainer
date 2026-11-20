@@ -33,3 +33,27 @@ export interface RequestOptions {
   requiresAuth?: boolean;
   headers?: Record<string, string>;
 }
+
+export interface PagedResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface TypingSessionResponse {
+  id: string;
+  grossWpm: number;
+  netWpm: number;
+  accuracy: number;
+  totalErrors: number;
+  rawCharacters: number;
+  correctCharacters: number;
+  durationSeconds: number;
+  passage: string;
+  completedAt: string;
+  sessionMode: string;
+  xpEarned: number;
+  isOfficialBenchmark: boolean;
+}

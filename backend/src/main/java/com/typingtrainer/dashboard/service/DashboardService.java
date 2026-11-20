@@ -58,6 +58,9 @@ public class DashboardService {
         String currentTier = gamification.getCurrentTier();
         int xpProgress = gamificationService.getXpProgressInCurrentLevel(totalXp, currentLevel);
         int xpRequiredNext = gamificationService.getXpRequiredForNextLevel(currentLevel);
+        double levelProgressPercentage = xpRequiredNext > 0
+                ? Math.min(100.0, Math.round(((double) xpProgress / xpRequiredNext) * 1000.0) / 10.0)
+                : 0.0;
 
         UserStatusDto userStatus = new UserStatusDto(
                 profile.getDisplayName(),
@@ -66,6 +69,7 @@ public class DashboardService {
                 totalXp,
                 xpProgress,
                 xpRequiredNext,
+                levelProgressPercentage,
                 gamification.getCurrentStreakDays(),
                 gamification.getLongestStreakDays(),
                 gamification.getFreezeShieldsAvailable()
@@ -199,18 +203,35 @@ public class DashboardService {
         // 7. Personal Bests (15s, 60s, DevMode, Longest session)
         List<TypingSessionEntity> top15s = typingSessionRepository.findTopBenchmark(15, 95.0, PageRequest.of(0, 1));
         Double best15s = top15s.isEmpty() ? null : Math.round(top15s.get(0).getNetWpm() * 10.0) / 10.0;
+        Double best15sAccuracy = top15s.isEmpty() ? null : Math.round(top15s.get(0).getAccuracy() * 10.0) / 10.0;
+        String best15sDate = top15s.isEmpty() ? null : top15s.get(0).getCompletedAt().toString();
+
+        Double best60sAccuracy = top60s.isEmpty() ? null : Math.round(top60s.get(0).getAccuracy() * 10.0) / 10.0;
+        String best60sDate = top60s.isEmpty() ? null : top60s.get(0).getCompletedAt().toString();
 
         List<TypingSessionEntity> topDev = typingSessionRepository.findTopByMode("DEVELOPER_MODE", 95.0, PageRequest.of(0, 1));
         Double bestDev = topDev.isEmpty() ? null : Math.round(topDev.get(0).getNetWpm() * 10.0) / 10.0;
+        Double bestDevAccuracy = topDev.isEmpty() ? null : Math.round(topDev.get(0).getAccuracy() * 10.0) / 10.0;
+        String bestDevDate = topDev.isEmpty() ? null : topDev.get(0).getCompletedAt().toString();
 
         List<TypingSessionEntity> longest = typingSessionRepository.findLongestSession(PageRequest.of(0, 1));
         Double longestSecs = longest.isEmpty() ? null : Math.round(longest.get(0).getDurationSeconds() * 10.0) / 10.0;
+        Double longestAccuracy = longest.isEmpty() ? null : Math.round(longest.get(0).getAccuracy() * 10.0) / 10.0;
+        String longestDate = longest.isEmpty() ? null : longest.get(0).getCompletedAt().toString();
 
         PersonalBestsDto personalBests = new PersonalBestsDto(
                 best15s,
                 bestWpm, // best 60s
                 bestDev,
-                longestSecs
+                longestSecs,
+                best15sAccuracy,
+                best60sAccuracy,
+                bestDevAccuracy,
+                longestAccuracy,
+                best15sDate,
+                best60sDate,
+                bestDevDate,
+                longestDate
         );
 
         // 8. Recent Sessions Log (Last 5)

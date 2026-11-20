@@ -32,10 +32,38 @@ public record DashboardSummaryResponse(
             int totalXp,
             int xpProgressInLevel,
             int xpRequiredForNextLevel,
+            double levelProgressPercentage,
             int currentStreakDays,
             int longestStreakDays,
             int freezeShieldsAvailable
-    ) {}
+    ) {
+        public UserStatusDto(
+                String displayName,
+                int currentLevel,
+                String currentTier,
+                int totalXp,
+                int xpProgressInLevel,
+                int xpRequiredForNextLevel,
+                int currentStreakDays,
+                int longestStreakDays,
+                int freezeShieldsAvailable
+        ) {
+            this(
+                    displayName,
+                    currentLevel,
+                    currentTier,
+                    totalXp,
+                    xpProgressInLevel,
+                    xpRequiredForNextLevel,
+                    xpRequiredForNextLevel > 0
+                            ? Math.min(100.0, Math.round(((double) xpProgressInLevel / xpRequiredForNextLevel) * 1000.0) / 10.0)
+                            : 0.0,
+                    currentStreakDays,
+                    longestStreakDays,
+                    freezeShieldsAvailable
+            );
+        }
+    }
 
     public record DailyGoalDto(
             int targetMinutes,
@@ -111,8 +139,26 @@ public record DashboardSummaryResponse(
             Double best15sWpm,
             Double best60sWpm,
             Double bestDevModeWpm,
-            Double longestSessionSeconds
-    ) {}
+            Double longestSessionSeconds,
+            Double best15sAccuracy,
+            Double best60sAccuracy,
+            Double bestDevModeAccuracy,
+            Double longestSessionAccuracy,
+            String best15sDate,
+            String best60sDate,
+            String bestDevModeDate,
+            String longestSessionDate
+    ) {
+        public PersonalBestsDto(
+                Double best15sWpm,
+                Double best60sWpm,
+                Double bestDevModeWpm,
+                Double longestSessionSeconds
+        ) {
+            this(best15sWpm, best60sWpm, bestDevModeWpm, longestSessionSeconds,
+                    null, null, null, null, null, null, null, null);
+        }
+    }
 
     public record RecentSessionSummaryDto(
             String id,

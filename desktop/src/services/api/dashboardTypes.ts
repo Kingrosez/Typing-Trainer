@@ -12,6 +12,7 @@ export interface UserStatusDto {
   totalXp: number;
   xpProgressInLevel: number;
   xpRequiredForNextLevel: number;
+  levelProgressPercentage?: number;
   currentStreakDays: number;
   longestStreakDays: number;
   freezeShieldsAvailable: number;
@@ -87,6 +88,14 @@ export interface PersonalBestsDto {
   best60sWpm: number | null;
   bestDevModeWpm: number | null;
   longestSessionSeconds: number | null;
+  best15sAccuracy?: number | null;
+  best60sAccuracy?: number | null;
+  bestDevModeAccuracy?: number | null;
+  longestSessionAccuracy?: number | null;
+  best15sDate?: string | null;
+  best60sDate?: string | null;
+  bestDevModeDate?: string | null;
+  longestSessionDate?: string | null;
 }
 
 export interface RecentSessionSummaryDto {

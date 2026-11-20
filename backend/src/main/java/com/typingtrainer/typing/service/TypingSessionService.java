@@ -49,19 +49,31 @@ public class TypingSessionService {
     /**
      * Determines whether a test session qualifies as an official benchmark for Personal Best records
      * under approved D4 specifications:
-     * 1. Benchmark Duration: Official 60-Second Standard Benchmark (testDurationTarget == 60)
-     * 2. Standard Corpus: Common English Words or Sentences (corpusType != "CUSTOM")
-     * 3. Accuracy Gate: >= 95.0%
-     * 4. Pause Integrity Limits: <= 2 pause events AND <= 60.0s cumulative paused duration.
+     * 1. 15-Second Sprint:
+     *    - Duration target == 15
+     *    - Standard approved corpus (corpusType != "CUSTOM")
+     *    - Accuracy >= 95.0%
+     * 2. Official 60-Second Benchmark:
+     *    - Duration target == 60
+     *    - Standard approved corpus (corpusType != "CUSTOM")
+     *    - Accuracy >= 95.0%
+     *    - Maximum 2 pause events (pauseCount <= 2)
+     *    - Cumulative paused duration <= 60.0s (cumulativePauseSeconds <= 60.0)
      */
     public boolean evaluateBenchmarkEligibility(double accuracy, int durationTarget, String corpusType,
                                                 int pauseCount, double cumulativePauseSeconds) {
         if (accuracy < 95.0) return false;
-        if (durationTarget != 60) return false;
         if ("CUSTOM".equalsIgnoreCase(corpusType)) return false;
-        if (pauseCount > 2) return false;
-        if (cumulativePauseSeconds > 60.0) return false;
-        return true;
+
+        if (durationTarget == 15) {
+            return true;
+        } else if (durationTarget == 60) {
+            if (pauseCount > 2) return false;
+            if (cumulativePauseSeconds > 60.0) return false;
+            return true;
+        }
+
+        return false;
     }
 
     @Transactional
@@ -131,7 +143,10 @@ public class TypingSessionService {
                 entity.getCorrectCharacters(),
                 entity.getDurationSeconds(),
                 entity.getPassage(),
-                entity.getCompletedAt()
+                entity.getCompletedAt(),
+                entity.getSessionMode(),
+                entity.getXpEarned(),
+                entity.isOfficialBenchmark()
         );
     }
 }

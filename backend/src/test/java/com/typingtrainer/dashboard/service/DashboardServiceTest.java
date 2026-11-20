@@ -167,4 +167,90 @@ class DashboardServiceTest {
         assertThat(response.wpmTrend().get(0).netWpm()).isEqualTo(58.0);
         assertThat(response.wpmTrend().get(1).netWpm()).isEqualTo(62.0);
     }
+
+    @Test
+    @DisplayName("W-08 Gamification: Computes levelProgressPercentage authoritatively with safe division")
+    void testLevelProgressPercentageCalculation() {
+        // Mock Gamification with 450 XP progress toward a 600 XP next level requirement
+        // (450 / 600) * 100 = 75.0%
+        when(gamificationService.getXpProgressInCurrentLevel(anyInt(), anyInt())).thenReturn(450);
+        when(gamificationService.getXpRequiredForNextLevel(anyInt())).thenReturn(600);
+
+        DashboardSummaryResponse response = dashboardService.getDashboardSummary(ZoneId.of("UTC"));
+        assertThat(response.userStatus().levelProgressPercentage()).isEqualTo(75.0);
+
+        // Safe division check: If xpRequiredForNextLevel is 0, progress is 0.0 (no DivisionByZero / NaN)
+        when(gamificationService.getXpRequiredForNextLevel(anyInt())).thenReturn(0);
+        DashboardSummaryResponse responseZero = dashboardService.getDashboardSummary(ZoneId.of("UTC"));
+        assertThat(responseZero.userStatus().levelProgressPercentage()).isEqualTo(0.0);
+    }
+
+    @Test
+    @DisplayName("W-09 Personal Bests: Maps winning WPM, accuracy, and timestamp metadata from entity records")
+    void testPersonalBestsMetadataMappingWhenRecordsPresent() {
+        Instant t15 = Instant.parse("2026-11-18T14:30:00Z");
+        Instant t60 = Instant.parse("2026-11-19T16:00:00Z");
+        Instant tDev = Instant.parse("2026-11-20T11:15:00Z");
+        Instant tLong = Instant.parse("2026-11-17T09:00:00Z");
+
+        TypingSessionEntity s15 = new TypingSessionEntity(UUID.randomUUID(), 88.0, 84.2, 99.1, 1, 200, 198, 15.0, "P", t15, "TYPING_TEST", 15, true, 20);
+        TypingSessionEntity s60 = new TypingSessionEntity(UUID.randomUUID(), 75.0, 72.4, 98.4, 2, 400, 395, 60.0, "P", t60, "TYPING_TEST", 60, true, 50);
+        TypingSessionEntity sDev = new TypingSessionEntity(UUID.randomUUID(), 60.0, 58.1, 97.2, 3, 300, 291, 120.0, "P", tDev, "DEVELOPER_MODE", 120, false, 40);
+        TypingSessionEntity sLong = new TypingSessionEntity(UUID.randomUUID(), 50.0, 48.0, 96.0, 5, 2500, 2400, 2535.5, "P", tLong, "PRACTICE", 0, false, 150);
+
+        when(typingSessionRepository.findTopBenchmark(eq(15), eq(95.0), any(Pageable.class))).thenReturn(List.of(s15));
+        when(typingSessionRepository.findTopBenchmark(eq(60), eq(95.0), any(Pageable.class))).thenReturn(List.of(s60));
+        when(typingSessionRepository.findTopByMode(eq("DEVELOPER_MODE"), eq(95.0), any(Pageable.class))).thenReturn(List.of(sDev));
+        when(typingSessionRepository.findLongestSession(any(Pageable.class))).thenReturn(List.of(sLong));
+
+        DashboardSummaryResponse response = dashboardService.getDashboardSummary(ZoneId.of("UTC"));
+        DashboardSummaryResponse.PersonalBestsDto pb = response.personalBests();
+
+        // 15s sprint
+        assertThat(pb.best15sWpm()).isEqualTo(84.2);
+        assertThat(pb.best15sAccuracy()).isEqualTo(99.1);
+        assertThat(pb.best15sDate()).isEqualTo("2026-11-18T14:30:00Z");
+
+        // 60s benchmark
+        assertThat(pb.best60sWpm()).isEqualTo(72.4);
+        assertThat(pb.best60sAccuracy()).isEqualTo(98.4);
+        assertThat(pb.best60sDate()).isEqualTo("2026-11-19T16:00:00Z");
+
+        // Dev mode
+        assertThat(pb.bestDevModeWpm()).isEqualTo(58.1);
+        assertThat(pb.bestDevModeAccuracy()).isEqualTo(97.2);
+        assertThat(pb.bestDevModeDate()).isEqualTo("2026-11-20T11:15:00Z");
+
+        // Longest session
+        assertThat(pb.longestSessionSeconds()).isEqualTo(2535.5);
+        assertThat(pb.longestSessionAccuracy()).isEqualTo(96.0);
+        assertThat(pb.longestSessionDate()).isEqualTo("2026-11-17T09:00:00Z");
+    }
+
+    @Test
+    @DisplayName("W-09 Personal Bests: Preserves null for unrecorded benchmarks without fabricating zero")
+    void testPersonalBestsPreservesNullWhenRecordsAbsent() {
+        when(typingSessionRepository.findTopBenchmark(anyInt(), anyDouble(), any(Pageable.class))).thenReturn(List.of());
+        when(typingSessionRepository.findTopByMode(anyString(), anyDouble(), any(Pageable.class))).thenReturn(List.of());
+        when(typingSessionRepository.findLongestSession(any(Pageable.class))).thenReturn(List.of());
+
+        DashboardSummaryResponse response = dashboardService.getDashboardSummary(ZoneId.of("UTC"));
+        DashboardSummaryResponse.PersonalBestsDto pb = response.personalBests();
+
+        assertThat(pb.best15sWpm()).isNull();
+        assertThat(pb.best15sAccuracy()).isNull();
+        assertThat(pb.best15sDate()).isNull();
+
+        assertThat(pb.best60sWpm()).isNull();
+        assertThat(pb.best60sAccuracy()).isNull();
+        assertThat(pb.best60sDate()).isNull();
+
+        assertThat(pb.bestDevModeWpm()).isNull();
+        assertThat(pb.bestDevModeAccuracy()).isNull();
+        assertThat(pb.bestDevModeDate()).isNull();
+
+        assertThat(pb.longestSessionSeconds()).isNull();
+        assertThat(pb.longestSessionAccuracy()).isNull();
+        assertThat(pb.longestSessionDate()).isNull();
+    }
 }
