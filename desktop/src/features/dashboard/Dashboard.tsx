@@ -12,6 +12,9 @@ import { WeeklyActivityChart } from "./components/WeeklyActivityChart";
 import { WpmTrendChart } from "./components/WpmTrendChart";
 import { WeakKeyHeroBanner } from "./components/WeakKeyHeroBanner";
 import { QuickPracticeCards } from "./components/QuickPracticeCards";
+import { GamificationProgressionWidget } from "./components/GamificationProgressionWidget";
+import { PersonalBestShowcase } from "./components/PersonalBestShowcase";
+import { RecentSessionsTable } from "./components/RecentSessionsTable";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
 
 const DEFAULT_OFFLINE_SUMMARY: DashboardSummaryResponse = {
@@ -181,6 +184,22 @@ export default function Dashboard() {
 
           {/* Row 4: Quick Practice Portals (W-07) */}
           <QuickPracticeCards />
+
+          {/* Row 5: Gamification Progression (W-08) & Personal Best Showcase (W-09) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <GamificationProgressionWidget
+              userStatus={summary.userStatus}
+              dailyGoal={summary.dailyGoal}
+            />
+            <PersonalBestShowcase
+              personalBests={summary.personalBests}
+            />
+          </div>
+
+          {/* Row 6: Recent Practice Sessions Table (W-10) */}
+          <RecentSessionsTable
+            initialSessions={summary.recentSessions}
+          />
         </div>
       ) : null}
     </div>

@@ -87,6 +87,15 @@ export const DashboardSkeleton: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Row 5: Gamification & Personal Best Skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="p-5 rounded-xl border border-border bg-card/50 space-y-3 h-44" />
+        <div className="p-5 rounded-xl border border-border bg-card/50 space-y-3 h-44" />
+      </div>
+
+      {/* Row 6: Recent Sessions Table Skeleton */}
+      <div className="p-5 rounded-xl border border-border bg-card/50 space-y-3 h-52" />
     </div>
   );
 };

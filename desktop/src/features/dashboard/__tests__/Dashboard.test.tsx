@@ -111,6 +111,17 @@ describe("Dashboard Page (Stage 2.2 Integration)", () => {
     expect(screen.getByText("Skill Drills")).toBeInTheDocument();
     expect(screen.getByText("Developer Mode")).toBeInTheDocument();
     expect(screen.getByText("Typing Games")).toBeInTheDocument();
+
+    // W-08: Gamification Progression & Streak Widget
+    expect(screen.getByLabelText(/Gamification Progression and Streak Hub/i)).toBeInTheDocument();
+    expect(screen.getByText("Total: 1,200 XP")).toBeInTheDocument();
+
+    // W-09: Personal Best Showcase
+    expect(screen.getByText("Personal Best Showcase")).toBeInTheDocument();
+    expect(screen.getByText("60s Benchmark")).toBeInTheDocument();
+
+    // W-10: Recent Practice Sessions Table
+    expect(screen.getByText("Recent Practice Sessions")).toBeInTheDocument();
   });
 
   it("handles backend error gracefully and provides a retry connection button", async () => {
