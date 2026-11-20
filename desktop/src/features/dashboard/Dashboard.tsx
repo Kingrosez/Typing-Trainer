@@ -1,27 +1,97 @@
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { PageHeader } from "../../components/layout/PageHeader";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import {
-  Zap,
-  GraduationCap,
-  Target,
-  Code2,
-  Gamepad2,
-  TrendingUp,
-  Flame,
-  ArrowRight,
-  Sparkles,
-} from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Zap, AlertCircle, RefreshCw } from "lucide-react";
+import { dashboardService } from "@/services/api/dashboardService";
+import type { DashboardSummaryResponse } from "@/services/api/dashboardTypes";
+import { WelcomeStatusHeader } from "./components/WelcomeStatusHeader";
+import { DailyGoalCapsule } from "./components/DailyGoalCapsule";
+import { PrimaryMetricCards } from "./components/PrimaryMetricCards";
+import { QuickPracticeCards } from "./components/QuickPracticeCards";
+import { DashboardSkeleton } from "./components/DashboardSkeleton";
+
+const DEFAULT_OFFLINE_SUMMARY: DashboardSummaryResponse = {
+  userStatus: {
+    displayName: "Typist",
+    currentLevel: 1,
+    currentTier: "Novice",
+    totalXp: 0,
+    xpProgressInLevel: 0,
+    xpRequiredForNextLevel: 120,
+    currentStreakDays: 0,
+    longestStreakDays: 0,
+    freezeShieldsAvailable: 0,
+  },
+  dailyGoal: {
+    targetMinutes: 20,
+    completedSecondsToday: 0,
+    remainingSecondsToday: 1200,
+    progressPercentage: 0,
+    isCompletedToday: false,
+  },
+  primaryMetrics: {
+    bestWpm: null,
+    averageWpm: null,
+    accuracy: null,
+    totalPracticeSeconds: 0,
+    completedSessionCount: 0,
+    currentSessionWpm: null,
+  },
+  weeklyActivity: [],
+  wpmTrend: [],
+  weakKeyRecommendations: [],
+  personalBests: {
+    best15sWpm: null,
+    best60sWpm: null,
+    bestDevModeWpm: null,
+    longestSessionSeconds: null,
+  },
+  recentSessions: [],
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdatingGoal, setIsUpdatingGoal] = useState<boolean>(false);
+
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await dashboardService.getDashboardSummary();
+      setSummary(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unable to reach local backend service";
+      setError(message);
+      // Fallback to default offline structure so UI remains operable
+      setSummary((prev) => prev ?? DEFAULT_OFFLINE_SUMMARY);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handleUpdateDailyGoal = async (targetMinutes: number) => {
+    setIsUpdatingGoal(true);
+    try {
+      const updatedGoal = await dashboardService.updateDailyGoal({ targetMinutes });
+      setSummary((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          dailyGoal: updatedGoal,
+        };
+      });
+    } finally {
+      setIsUpdatingGoal(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -39,235 +109,61 @@ export default function Dashboard() {
         }
       />
 
-      {/* Hero Quick Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Active Streak Card */}
-        <Card className="border border-border bg-gradient-to-br from-card to-secondary/30">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-mono font-medium text-muted-foreground flex items-center space-x-1">
-                <Flame className="w-4 h-4 text-muted-foreground" />
-                <span>Daily Practice Streak</span>
-              </CardDescription>
-              <span className="text-xs font-mono font-medium text-muted-foreground">0 Days</span>
-            </div>
-            <CardTitle className="text-2xl font-bold font-mono">
-              0 <span className="text-sm font-sans font-normal text-muted-foreground">Days Active</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>Complete a session to start your daily practice streak.</p>
-          </CardContent>
-        </Card>
-
-        {/* Current Benchmark Card */}
-        <Card className="border border-border bg-gradient-to-br from-card to-secondary/30">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-mono font-medium text-primary flex items-center space-x-1">
-                <Zap className="w-4 h-4 text-primary" />
-                <span>Speed Benchmark</span>
-              </CardDescription>
-              <span className="text-xs font-mono font-medium text-muted-foreground">Unranked</span>
-            </div>
-            <CardTitle className="text-2xl font-bold font-mono">
-              -- <span className="text-sm font-sans font-normal text-muted-foreground">WPM</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>No tests recorded yet. Start a test to record your baseline.</p>
-          </CardContent>
-        </Card>
-
-        {/* Level Mastery Card */}
-        <Card className="border border-border bg-gradient-to-br from-card to-secondary/30">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardDescription className="text-xs font-mono font-medium text-emerald-500 flex items-center space-x-1">
-                <Sparkles className="w-4 h-4 text-emerald-500" />
-                <span>Typist Rank</span>
-              </CardDescription>
-              <span className="text-xs font-mono font-medium text-muted-foreground">Tier 1</span>
-            </div>
-            <CardTitle className="text-2xl font-bold font-mono">
-              Level 1 <span className="text-sm font-sans font-normal text-muted-foreground">Novice</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 text-xs text-muted-foreground">
-            <p>0 / 100 XP to reach Level 2 Apprentice.</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Practice Arenas Direct Launch Grid */}
-      <div>
-        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 font-sans">
-          Practice Arenas
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Typing Test */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/typing-test")}
+      {/* Non-blocking Error / Offline Recovery Banner */}
+      {error && (
+        <div
+          className="flex items-center justify-between p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              Local backend is currently offline or synchronizing ({error}). Displaying local view.
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDashboardData}
+            disabled={loading}
+            className="h-7 text-xs border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                  <Zap className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+2
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Typing Test Arena</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Standardized benchmarks (15s, 30s, 60s, custom text) with live accuracy and WPM graphs.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-primary group-hover:translate-x-1 transition-transform">
-                <span>Enter Arena</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Learning Mode */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/learning-mode")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                  <GraduationCap className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+3
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Learning Mode</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Step-by-step curriculum teaching touch typing finger-by-finger from home row upwards.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
-                <span>View Curriculum</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skill Drills */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/skill-drills")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
-                  <Target className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+4
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Skill Drills</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Isolate troublesome bigrams, strengthen pinky dexterity, and master punctuation reaches.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-purple-600 dark:text-purple-400 group-hover:translate-x-1 transition-transform">
-                <span>Select Drills</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Developer Mode */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/developer-mode")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 group-hover:scale-110 transition-transform">
-                  <Code2 className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+5
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Developer Mode</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Programming syntax, braces, arrow functions, and language-specific code snippets.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-cyan-600 dark:text-cyan-400 group-hover:translate-x-1 transition-transform">
-                <span>Practice Code</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Typing Games */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/typing-games")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
-                  <Gamepad2 className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+6
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Typing Games</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Arcade-style typing games designed to test reflexes, rhythm, and accuracy.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-pink-600 dark:text-pink-400 group-hover:translate-x-1 transition-transform">
-                <span>Play Games</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Analytics & Mastery */}
-          <Card
-            className="border border-border hover:border-primary/50 transition-all cursor-pointer group"
-            onClick={() => navigate("/analytics")}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded border border-border">
-                  Ctrl+7
-                </kbd>
-              </div>
-              <CardTitle className="text-base pt-2">Analytics & Heatmaps</CardTitle>
-              <CardDescription className="text-xs leading-relaxed">
-                Finger speed heatmaps, historical progression curves, and error analysis.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-center text-xs font-medium text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-transform">
-                <span>View Analytics</span>
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </div>
-            </CardContent>
-          </Card>
+            <RefreshCw className={`w-3 h-3 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Retry Connection</span>
+          </Button>
         </div>
-      </div>
+      )}
+
+      {/* Loading Skeleton vs Live Widgets */}
+      {loading && !summary ? (
+        <DashboardSkeleton />
+      ) : summary ? (
+        <div className="space-y-6">
+          {/* Row 0: Welcome Header (W-01) & Daily Goal Capsule (W-02) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div className="lg:col-span-7 xl:col-span-8 p-5 rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+              <WelcomeStatusHeader
+                userStatus={summary.userStatus}
+                completedSessionCount={summary.primaryMetrics.completedSessionCount}
+              />
+            </div>
+            <div className="lg:col-span-5 xl:col-span-4">
+              <DailyGoalCapsule
+                dailyGoal={summary.dailyGoal}
+                onUpdateGoal={handleUpdateDailyGoal}
+                isLoading={isUpdatingGoal}
+              />
+            </div>
+          </div>
+
+          {/* Row 1: Four Primary Metric Cards (W-03) */}
+          <PrimaryMetricCards metrics={summary.primaryMetrics} />
+
+          {/* Row 4: Quick Practice Portals (W-07) */}
+          <QuickPracticeCards />
+        </div>
+      ) : null}
     </div>
   );
 }
