@@ -45,6 +45,44 @@ describe("ApiClient", () => {
     expect(calledHeaders["X-Request-Token"]).toBeUndefined();
   });
 
+  it("merges custom request headers safely", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response);
+
+    await apiClient.get("/api/v1/dashboard/summary", {
+      headers: {
+        "X-Timezone": "America/New_York",
+        "X-Custom-Client": "TypingTrainerDesktop",
+      },
+    });
+
+    const calledHeaders = (fetchSpy.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+    expect(calledHeaders["X-Timezone"]).toBe("America/New_York");
+    expect(calledHeaders["X-Custom-Client"]).toBe("TypingTrainerDesktop");
+    expect(calledHeaders["X-Request-Token"]).toBe("test-crypto-token-xyz");
+    expect(calledHeaders["Accept"]).toBe("application/json");
+  });
+
+  it("prevents custom headers from overriding X-Request-Token authentication header", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response);
+
+    await apiClient.get("/api/v1/dashboard/summary", {
+      headers: {
+        "X-Request-Token": "attempted-malicious-override",
+      },
+    });
+
+    const calledHeaders = (fetchSpy.mock.calls[0]?.[1]?.headers ?? {}) as Record<string, string>;
+    expect(calledHeaders["X-Request-Token"]).toBe("test-crypto-token-xyz");
+  });
+
   it("handles 401 Unauthorized by parsing standardized ApiErrorResponse", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: false,

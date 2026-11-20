@@ -27,3 +27,9 @@ export interface SystemInfoResponse {
 }
 
 export type ConnectionState = "Starting" | "Online" | "Reconnecting" | "Offline" | "Error";
+
+export interface RequestOptions {
+  timeoutMs?: number;
+  requiresAuth?: boolean;
+  headers?: Record<string, string>;
+}

@@ -1,4 +1,4 @@
-import type { ApiErrorResponse, BackendConnectionInfo } from "./types";
+import type { ApiErrorResponse, BackendConnectionInfo, RequestOptions } from "./types";
 
 class ApiClient {
   private connection: BackendConnectionInfo | null = null;
@@ -16,19 +16,19 @@ class ApiClient {
     return this.connection !== null;
   }
 
-  public async get<T>(path: string, options: { timeoutMs?: number; requiresAuth?: boolean } = {}): Promise<T> {
+  public async get<T>(path: string, options: RequestOptions = {}): Promise<T> {
     return this.request<T>("GET", path, undefined, options);
   }
 
-  public async post<T, B = unknown>(path: string, body?: B, options: { timeoutMs?: number; requiresAuth?: boolean } = {}): Promise<T> {
+  public async post<T, B = unknown>(path: string, body?: B, options: RequestOptions = {}): Promise<T> {
     return this.request<T>("POST", path, body, options);
   }
 
-  public async put<T, B = unknown>(path: string, body?: B, options: { timeoutMs?: number; requiresAuth?: boolean } = {}): Promise<T> {
+  public async put<T, B = unknown>(path: string, body?: B, options: RequestOptions = {}): Promise<T> {
     return this.request<T>("PUT", path, body, options);
   }
 
-  public async delete<T>(path: string, options: { timeoutMs?: number; requiresAuth?: boolean } = {}): Promise<T> {
+  public async delete<T>(path: string, options: RequestOptions = {}): Promise<T> {
     return this.request<T>("DELETE", path, undefined, options);
   }
 
@@ -36,7 +36,7 @@ class ApiClient {
     method: string,
     path: string,
     body?: unknown,
-    options: { timeoutMs?: number; requiresAuth?: boolean } = {}
+    options: RequestOptions = {}
   ): Promise<T> {
     const requiresAuth = options.requiresAuth ?? true;
     const timeoutMs = options.timeoutMs ?? this.defaultTimeoutMs;
@@ -51,6 +51,7 @@ class ApiClient {
     const headers: Record<string, string> = {
       "Accept": "application/json",
       "Content-Type": "application/json",
+      ...(options.headers ?? {}),
     };
 
     if (requiresAuth && this.connection.token) {
