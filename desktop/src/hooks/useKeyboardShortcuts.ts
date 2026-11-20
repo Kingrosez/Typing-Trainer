@@ -12,12 +12,19 @@ export function useKeyboardShortcuts() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is actively typing inside an input, textarea, or contentEditable element,
       // or if an accessible modal dialog is currently open
-      const target = e.target as HTMLElement | null;
-      const isInputFocused =
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
+      const activeEl = typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
+      const target = (e.target as HTMLElement | null) || activeEl;
+
+      const isTargetInput = (el: HTMLElement | null) =>
+        Boolean(el) &&
+        (el?.tagName === "INPUT" ||
+          el?.tagName === "TEXTAREA" ||
+          Boolean(el?.isContentEditable) ||
+          el?.contentEditable === "true" ||
+          el?.getAttribute?.("contenteditable") === "true" ||
+          el?.getAttribute?.("contenteditable") === "");
+
+      const isInputFocused = isTargetInput(target) || isTargetInput(activeEl);
       const isDialogOpen = typeof document !== "undefined" && document.querySelector('[role="dialog"]') !== null;
 
       const hasCtrl = e.ctrlKey || e.metaKey;

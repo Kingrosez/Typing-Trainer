@@ -159,4 +159,45 @@ class GamificationServiceTest {
         assertThat(gamification.getCurrentStreakDays()).isEqualTo(7);
         assertThat(gamification.getFreezeShieldsAvailable()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("checkAndAwardDailyGoalBonus: awards 150 XP once per calendar day and rejects duplicates")
+    void testCheckAndAwardDailyGoalBonusAwardsOncePerDay() {
+        UserGamificationEntity gamification = new UserGamificationEntity(
+                testUserId, 100, 1, "Novice", 0, 0, 0, null, null
+        );
+        when(userGamificationRepository.findById(testUserId)).thenReturn(Optional.of(gamification));
+
+        LocalDate today = LocalDate.of(2026, 11, 20);
+        String expectedEventId = "DAILY_GOAL_" + testUserId + "_" + today;
+
+        // First attempt: Not in ledger yet
+        when(userRewardLedgerRepository.findByRewardEventId(expectedEventId)).thenReturn(Optional.empty());
+
+        boolean firstAward = gamificationService.checkAndAwardDailyGoalBonus(testUserId, today, 1200, 20);
+        assertThat(firstAward).isTrue();
+        assertThat(gamification.getTotalXp()).isEqualTo(250); // 100 + 150 XP
+
+        // Second attempt on the same day: Already in ledger
+        when(userRewardLedgerRepository.findByRewardEventId(expectedEventId))
+                .thenReturn(Optional.of(mock(com.typingtrainer.gamification.entity.UserRewardLedgerEntity.class)));
+
+        boolean secondAward = gamificationService.checkAndAwardDailyGoalBonus(testUserId, today, 1500, 20);
+        assertThat(secondAward).isFalse();
+        assertThat(gamification.getTotalXp()).isEqualTo(250); // XP remains unchanged
+    }
+
+    @Test
+    @DisplayName("hasDailyGoalBonusBeenAwarded: reflects presence in user_reward_ledger accurately")
+    void testHasDailyGoalBonusBeenAwarded() {
+        LocalDate today = LocalDate.of(2026, 11, 20);
+        String eventId = "DAILY_GOAL_" + testUserId + "_" + today;
+
+        when(userRewardLedgerRepository.findByRewardEventId(eventId)).thenReturn(Optional.empty());
+        assertThat(gamificationService.hasDailyGoalBonusBeenAwarded(testUserId, today)).isFalse();
+
+        when(userRewardLedgerRepository.findByRewardEventId(eventId))
+                .thenReturn(Optional.of(mock(com.typingtrainer.gamification.entity.UserRewardLedgerEntity.class)));
+        assertThat(gamificationService.hasDailyGoalBonusBeenAwarded(testUserId, today)).isTrue();
+    }
 }

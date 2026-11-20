@@ -141,4 +141,49 @@ class D6ErrorAttributionAndMasteryTest {
         assertThat(overview.masteredKeyCount()).isEqualTo(1);
         assertThat(analysis.recommendations()).isEmpty();
     }
+
+    @Test
+    @DisplayName("Mastery Qualification: 2 qualifying clean sessions only remains Stable (does not graduate to Mastered)")
+    void testTwoCleanSessionsStaysStable() {
+        when(keyTelemetryRepository.findObservedKeysSince(any(Instant.class)))
+                .thenReturn(List.of("k"));
+
+        Instant now = Instant.now();
+        // Session 1: 35 opps, 1 error (2.8%)
+        KeyTelemetryEntity s1 = new KeyTelemetryEntity(UUID.randomUUID(), "sess1", "k", 35, 1, 150, now.minus(Duration.ofHours(2)));
+        // Session 2: 40 opps, 0 errors (0.0%)
+        KeyTelemetryEntity s2 = new KeyTelemetryEntity(UUID.randomUUID(), "sess2", "k", 40, 0, 140, now.minus(Duration.ofHours(1)));
+
+        when(keyTelemetryRepository.findRecentForKeySince(eq("k"), any(Instant.class)))
+                .thenReturn(List.of(s2, s1)); // reverse chronological
+
+        RecommendationService.RecommendationAnalysis analysis = recommendationService.analyzeRecommendations();
+
+        WeakKeyOverviewDto overview = analysis.overview();
+        assertThat(overview.overallStatus()).isEqualTo("STABLE");
+        assertThat(overview.masteredKeyCount()).isEqualTo(0);
+        assertThat(overview.stableKeyCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Rolling Window Cap: Exactly 101 opportunities is capped at 100 strokes")
+    void testExactly101OpportunitiesCappedAt100() {
+        when(keyTelemetryRepository.findObservedKeysSince(any(Instant.class)))
+                .thenReturn(List.of("m"));
+
+        Instant now = Instant.now();
+        // Entry with 101 opps and 10 errors
+        KeyTelemetryEntity e1 = new KeyTelemetryEntity(UUID.randomUUID(), "sess1", "m", 101, 10, 150, now.minus(Duration.ofDays(1)));
+        when(keyTelemetryRepository.findRecentForKeySince(eq("m"), any(Instant.class)))
+                .thenReturn(List.of(e1));
+
+        RecommendationService.RecommendationAnalysis analysis = recommendationService.analyzeRecommendations();
+
+        // Must be capped to 100 opportunities
+        WeakKeyRecommendation rec = analysis.recommendations().get(0);
+        assertThat(rec.opportunities()).isEqualTo(100);
+        // Errors pro-rated: round(10 * 100 / 101) = 10
+        assertThat(rec.errors()).isEqualTo(10);
+        assertThat(rec.errorRate()).isEqualTo(10.0);
+    }
 }

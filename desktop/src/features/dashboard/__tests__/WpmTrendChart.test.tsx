@@ -88,4 +88,84 @@ describe("WpmTrendChart (W-05)", () => {
     expect(rows[3]).toHaveTextContent("96.8%");
     expect(rows[3]).toHaveTextContent("2");
   });
+
+  it("limits display to latest 15 sessions when more than 15 sessions are provided", () => {
+    const twentySessions: WpmTrendPointDto[] = Array.from({ length: 20 }, (_, i) => ({
+      sessionId: `s-${i + 1}`,
+      netWpm: 40 + i,
+      grossWpm: 45 + i,
+      accuracy: 90 + (i % 8),
+      totalErrors: i % 5,
+      completedAt: new Date(2026, 10, i + 1).toISOString(),
+    }));
+
+    render(<WpmTrendChart wpmTrend={twentySessions} />);
+
+    expect(screen.getByText(/Net WPM progression across last 15 sessions/i)).toBeInTheDocument();
+    const rows = screen.getAllByRole("row", { hidden: true });
+    // 1 header row + 15 session rows = 16 rows
+    expect(rows.length).toBe(16);
+    // The first displayed session should be session 6 (netWpm = 40 + 5 = 45)
+    expect(rows[1]).toHaveTextContent("45.0 WPM");
+    // The last displayed session should be session 20 (netWpm = 40 + 19 = 59)
+    expect(rows[15]).toHaveTextContent("59.0 WPM");
+  });
+
+  it("distinguishes error spike threshold: 4 errors is not a spike, 5 errors is a spike", () => {
+    const boundaryPoints: WpmTrendPointDto[] = [
+      {
+        sessionId: "s-boundary-4",
+        netWpm: 50.0,
+        grossWpm: 52.0,
+        accuracy: 95.0,
+        totalErrors: 4, // Exactly 4 errors: Not a spike (<= 4)
+        completedAt: "2026-11-15T10:00:00Z",
+      },
+      {
+        sessionId: "s-boundary-5",
+        netWpm: 51.0,
+        grossWpm: 55.0,
+        accuracy: 91.0,
+        totalErrors: 5, // Exactly 5 errors: Spike (> 4)
+        completedAt: "2026-11-16T10:00:00Z",
+      },
+    ];
+
+    const { container } = render(<WpmTrendChart wpmTrend={boundaryPoints} />);
+
+    // In SVG, node dots have circles with specific fill colors:
+    // Non-spike: #2563EB, Spike: #EF4444
+    const circles = container.querySelectorAll("svg circle[fill='#2563EB'], svg circle[fill='#EF4444']");
+    expect(circles.length).toBe(2);
+    // First node dot has 4 errors -> #2563EB
+    expect(circles[0]).toHaveAttribute("fill", "#2563EB");
+    // Second node dot has 5 errors -> #EF4444
+    expect(circles[1]).toHaveAttribute("fill", "#EF4444");
+  });
+
+  it("handles null and undefined properties gracefully without crashing", () => {
+    const corruptPoints = [
+      {
+        sessionId: "s-null-1",
+        netWpm: null,
+        grossWpm: undefined,
+        accuracy: null,
+        totalErrors: null,
+        completedAt: "2026-11-15T10:00:00Z",
+      },
+      {
+        sessionId: "s-null-2",
+        netWpm: 65.0,
+        grossWpm: 70.0,
+        accuracy: 98.0,
+        totalErrors: 1,
+        completedAt: "2026-11-16T10:00:00Z",
+      },
+    ];
+
+    render(<WpmTrendChart wpmTrend={corruptPoints as unknown as WpmTrendPointDto[]} />);
+
+    expect(screen.getByText("Speed & Consistency Trend")).toBeInTheDocument();
+    expect(screen.getByText(/Net WPM progression across last 2 sessions/i)).toBeInTheDocument();
+  });
 });

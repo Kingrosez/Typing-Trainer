@@ -31,8 +31,11 @@ describe("useKeyboardShortcuts", () => {
     document.body.innerHTML = "";
   });
 
-  it("handles Ctrl+2 through Ctrl+6 application navigation", () => {
+  it("handles Ctrl+1 through Ctrl+8 and Ctrl+, application navigation", () => {
     renderHook(() => useKeyboardShortcuts());
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "1", ctrlKey: true }));
+    expect(mockNavigate).toHaveBeenCalledWith("/");
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "2", ctrlKey: true }));
     expect(mockNavigate).toHaveBeenCalledWith("/typing-test");
@@ -48,19 +51,59 @@ describe("useKeyboardShortcuts", () => {
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "6", ctrlKey: true }));
     expect(mockNavigate).toHaveBeenCalledWith("/typing-games");
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "7", ctrlKey: true }));
+    expect(mockNavigate).toHaveBeenCalledWith("/analytics");
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "8", ctrlKey: true }));
+    expect(mockNavigate).toHaveBeenCalledWith("/achievements");
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: ",", ctrlKey: true }));
+    expect(mockNavigate).toHaveBeenCalledWith("/settings");
   });
 
-  it("suppresses navigation when an input element is focused", () => {
+  it("handles universal shortcuts: Ctrl+K, F11, Ctrl+Shift+T, and Ctrl+B", () => {
     renderHook(() => useKeyboardShortcuts());
 
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }));
+    expect(mockToggleCommandPalette).toHaveBeenCalledTimes(1);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "F11" }));
+    expect(mockToggleZenMode).toHaveBeenCalledTimes(1);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "t", ctrlKey: true, shiftKey: true }));
+    expect(mockToggleTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it("suppresses navigation when an input, textarea, or contentEditable element is focused", () => {
+    renderHook(() => useKeyboardShortcuts());
+
+    // 1. Input element
     const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();
+    const event1 = new KeyboardEvent("keydown", { key: "2", ctrlKey: true });
+    Object.defineProperty(event1, "target", { value: input });
+    window.dispatchEvent(event1);
+    expect(mockNavigate).not.toHaveBeenCalled();
 
-    const event = new KeyboardEvent("keydown", { key: "2", ctrlKey: true });
-    Object.defineProperty(event, "target", { value: input });
-    window.dispatchEvent(event);
+    // 2. Textarea element
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+    textarea.focus();
+    const event2 = new KeyboardEvent("keydown", { key: "2", ctrlKey: true });
+    Object.defineProperty(event2, "target", { value: textarea });
+    window.dispatchEvent(event2);
+    expect(mockNavigate).not.toHaveBeenCalled();
 
+    // 3. contentEditable element
+    const contentEditable = document.createElement("div");
+    contentEditable.contentEditable = "true";
+    document.body.appendChild(contentEditable);
+    contentEditable.focus();
+    const event3 = new KeyboardEvent("keydown", { key: "2", ctrlKey: true });
+    Object.defineProperty(event3, "target", { value: contentEditable });
+    window.dispatchEvent(event3);
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
@@ -73,6 +116,14 @@ describe("useKeyboardShortcuts", () => {
 
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "2", ctrlKey: true }));
 
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("removes event listener on unmount", () => {
+    const { unmount } = renderHook(() => useKeyboardShortcuts());
+    unmount();
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "2", ctrlKey: true }));
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

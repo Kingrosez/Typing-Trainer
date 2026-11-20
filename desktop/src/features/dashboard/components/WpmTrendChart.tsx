@@ -9,10 +9,18 @@ interface WpmTrendChartProps {
 export const WpmTrendChart: React.FC<WpmTrendChartProps> = ({ wpmTrend }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  // Chronological ordering: Ensure data points are sorted chronologically
-  const points = [...(wpmTrend ?? [])].sort((a, b) =>
-    a.completedAt.localeCompare(b.completedAt)
+  // Chronological ordering: Ensure data points are sorted chronologically and capped at latest 15 sessions
+  const rawPoints = (wpmTrend ?? []).filter((p): p is WpmTrendPointDto => p != null);
+  const sortedPoints = [...rawPoints].sort((a, b) =>
+    (a.completedAt ?? "").localeCompare(b.completedAt ?? "")
   );
+  const points = sortedPoints.slice(-15).map((p) => ({
+    ...p,
+    netWpm: Number.isFinite(p.netWpm) ? Math.max(0, p.netWpm) : 0,
+    grossWpm: Number.isFinite(p.grossWpm) ? Math.max(0, p.grossWpm) : 0,
+    accuracy: Number.isFinite(p.accuracy) ? Math.max(0, Math.min(100, p.accuracy)) : 0,
+    totalErrors: Number.isFinite(p.totalErrors) ? Math.max(0, p.totalErrors) : 0,
+  }));
 
   const count = points.length;
 
