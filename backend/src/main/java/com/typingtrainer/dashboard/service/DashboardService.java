@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.*;
 import java.time.format.TextStyle;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @Service
@@ -82,7 +83,19 @@ public class DashboardService {
         int targetSeconds = dailyGoalMinutes * 60;
         int remainingSeconds = (int) Math.max(0, targetSeconds - completedSecondsToday);
         double progressPercentage = Math.min(100.0, (completedSecondsToday / targetSeconds) * 100.0);
-        boolean isGoalMetToday = completedSecondsToday >= targetSeconds;
+
+        // Daily goal bonus is awarded idempotently; isCompletedToday is true ONLY after
+        // confirming successful ledger record in user_reward_ledger
+        boolean isGoalMetToday = false;
+        if (completedSecondsToday >= targetSeconds) {
+            try {
+                gamificationService.checkAndAwardDailyGoalBonus(userId, today, completedSecondsToday, dailyGoalMinutes);
+                gamificationService.evaluateDailyStreak(userId, today, true);
+                isGoalMetToday = gamificationService.hasDailyGoalBonusBeenAwarded(userId, today);
+            } catch (Exception e) {
+                isGoalMetToday = false;
+            }
+        }
 
         DailyGoalDto dailyGoal = new DailyGoalDto(
                 dailyGoalMinutes,
@@ -91,12 +104,6 @@ public class DashboardService {
                 Math.round(progressPercentage * 10.0) / 10.0,
                 isGoalMetToday
         );
-
-        // Evaluate daily goal bonus and streak in background
-        if (isGoalMetToday) {
-            gamificationService.checkAndAwardDailyGoalBonus(userId, today, completedSecondsToday, dailyGoalMinutes);
-            gamificationService.evaluateDailyStreak(userId, today, true);
-        }
 
         // 3. Primary Metrics (Trailing 30 mean, Best 60s WPM, Accuracy, Duration, Completed count)
         long totalSessions = typingSessionRepository.count();
@@ -133,11 +140,11 @@ public class DashboardService {
                 currentSessionWpm
         );
 
-        // 4. Weekly Activity (Last 7 calendar days Mon-Sun relative to today)
+        // 4. Weekly Activity (Monday-to-Sunday for current local week)
         List<WeeklyActivityDayDto> weeklyActivity = new ArrayList<>();
-        LocalDate weekStart = today.minusDays(6); // 7-day rolling window
+        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         for (int i = 0; i < 7; i++) {
-            LocalDate day = weekStart.plusDays(i);
+            LocalDate day = monday.plusDays(i);
             Instant dayStart = day.atStartOfDay(clientZone).toInstant();
             Instant dayEnd = day.plusDays(1).atStartOfDay(clientZone).toInstant();
 
@@ -171,9 +178,9 @@ public class DashboardService {
                 ))
                 .toList();
 
-        // 6. Weak-Key Recommendations
-        List<WeakKeyRecommendation> weakKeyRecs = recommendationService.getRecommendations();
-        List<WeakKeyDto> weakKeys = weakKeyRecs.stream()
+        // 6. Weak-Key Recommendations & Authoritative D6 Overview
+        RecommendationService.RecommendationAnalysis analysis = recommendationService.analyzeRecommendations();
+        List<WeakKeyDto> weakKeys = analysis.recommendations().stream()
                 .map(w -> new WeakKeyDto(
                         w.keyChar(),
                         w.errorRate(),
@@ -182,9 +189,12 @@ public class DashboardService {
                         w.errors(),
                         w.wpi(),
                         w.tier(),
-                        w.explanation()
+                        w.explanation(),
+                        w.consecutiveCleanSessions(),
+                        w.isMastered()
                 ))
                 .toList();
+        WeakKeyOverviewDto weakKeyOverview = analysis.overview();
 
         // 7. Personal Bests (15s, 60s, DevMode, Longest session)
         List<TypingSessionEntity> top15s = typingSessionRepository.findTopBenchmark(15, 95.0, PageRequest.of(0, 1));
@@ -227,7 +237,8 @@ public class DashboardService {
                 wpmTrend,
                 weakKeys,
                 personalBests,
-                recentSessions
+                recentSessions,
+                weakKeyOverview
         );
     }
 
@@ -245,12 +256,22 @@ public class DashboardService {
         int remainingSeconds = (int) Math.max(0, targetSeconds - completedSecondsToday);
         double progressPercentage = Math.min(100.0, (completedSecondsToday / targetSeconds) * 100.0);
 
+        boolean isGoalMet = false;
+        if (completedSecondsToday >= targetSeconds) {
+            try {
+                gamificationService.checkAndAwardDailyGoalBonus(GamificationService.DEFAULT_USER_ID, today, completedSecondsToday, dailyGoalMinutes);
+                isGoalMet = gamificationService.hasDailyGoalBonusBeenAwarded(GamificationService.DEFAULT_USER_ID, today);
+            } catch (Exception e) {
+                isGoalMet = false;
+            }
+        }
+
         return new DailyGoalDto(
                 dailyGoalMinutes,
                 (int) Math.round(completedSecondsToday),
                 remainingSeconds,
                 Math.round(progressPercentage * 10.0) / 10.0,
-                completedSecondsToday >= targetSeconds
+                isGoalMet
         );
     }
 }

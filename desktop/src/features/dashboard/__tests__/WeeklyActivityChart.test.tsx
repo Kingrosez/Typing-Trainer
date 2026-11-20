@@ -56,4 +56,18 @@ describe("WeeklyActivityChart (W-04)", () => {
     expect(screen.getByText("Weekly Practice Activity")).toBeInTheDocument();
     expect(screen.getByText("Goal Met (0/7)")).toBeInTheDocument();
   });
+
+  it("enforces Monday-to-Sunday ordering and matches visual chart to accessible table data", () => {
+    render(<WeeklyActivityChart weeklyActivity={mock7Days} targetMinutes={20} />);
+    const rows = screen.getAllByRole("row", { hidden: true });
+    // First data row is Monday (index 1 after header row 0)
+    expect(rows[1]).toHaveTextContent("Mon");
+    expect(rows[1]).toHaveTextContent("20 minutes");
+    expect(rows[1]).toHaveTextContent("Goal Met");
+
+    // Seventh data row is Sunday
+    expect(rows[7]).toHaveTextContent("Sun");
+    expect(rows[7]).toHaveTextContent("0 minutes");
+    expect(rows[7]).toHaveTextContent("Goal Not Met");
+  });
 });

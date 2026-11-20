@@ -214,6 +214,11 @@ public class GamificationService {
         return awardReward(userId, eventId, null, "DAILY_GOAL_COMPLETION", DAILY_GOAL_BONUS_XP);
     }
 
+    public boolean hasDailyGoalBonusBeenAwarded(UUID userId, LocalDate localDate) {
+        String eventId = "DAILY_GOAL_" + userId + "_" + localDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        return userRewardLedgerRepository.findByRewardEventId(eventId).isPresent();
+    }
+
     public void evaluateDailyStreak(UUID userId, LocalDate today, boolean goalMetToday) {
         UserGamificationEntity gamification = getOrCreateGamification(userId);
         if (!goalMetToday) {

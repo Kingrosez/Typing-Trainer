@@ -54,6 +54,15 @@ describe("Dashboard Page (Stage 2.2 Integration)", () => {
       longestSessionSeconds: null,
     },
     recentSessions: [],
+    weakKeyOverview: {
+      overallStatus: "NO_RECOMMENDATIONS",
+      headline: "Optimal Performance",
+      explanation: "No weak keys detected across your recent sessions.",
+      weakKeyCount: 0,
+      developingKeyCount: 0,
+      stableKeyCount: 0,
+      masteredKeyCount: 0,
+    },
   };
 
   beforeEach(() => {
@@ -92,8 +101,9 @@ describe("Dashboard Page (Stage 2.2 Integration)", () => {
     // W-05: WPM Trend Chart
     expect(screen.getByText("Speed & Consistency Trend")).toBeInTheDocument();
 
-    // W-06: Weak-Key Remediation Banner
-    expect(screen.getByText(/Flawless Precision 🌟/i)).toBeInTheDocument();
+    // W-06: Weak-Key Remediation Banner (Reconciled D6 status)
+    expect(screen.getByText(/Optimal Performance/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No Weak Keys Detected/i).length).toBeGreaterThanOrEqual(1);
 
     // W-07: Arenas
     expect(screen.getByText("Typing Test Arena")).toBeInTheDocument();

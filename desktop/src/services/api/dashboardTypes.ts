@@ -60,6 +60,26 @@ export interface WeakKeyDto {
   wpi: number;
   tier: string;
   explanation: string;
+  consecutiveCleanSessions?: number;
+  isMastered?: boolean;
+}
+
+export type WeakKeyStatus =
+  | "INSUFFICIENT_DATA"
+  | "WEAK"
+  | "DEVELOPING"
+  | "STABLE"
+  | "MASTERED"
+  | "NO_RECOMMENDATIONS";
+
+export interface WeakKeyOverviewDto {
+  overallStatus: WeakKeyStatus;
+  headline: string;
+  explanation: string;
+  weakKeyCount: number;
+  developingKeyCount: number;
+  stableKeyCount: number;
+  masteredKeyCount: number;
 }
 
 export interface PersonalBestsDto {
@@ -90,6 +110,7 @@ export interface DashboardSummaryResponse {
   weakKeyRecommendations: WeakKeyDto[];
   personalBests: PersonalBestsDto;
   recentSessions: RecentSessionSummaryDto[];
+  weakKeyOverview?: WeakKeyOverviewDto;
 }
 
 export interface DailyGoalUpdateRequest {

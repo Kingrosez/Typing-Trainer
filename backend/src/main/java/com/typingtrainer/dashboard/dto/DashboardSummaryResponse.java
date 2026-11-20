@@ -10,8 +10,21 @@ public record DashboardSummaryResponse(
         List<WpmTrendPointDto> wpmTrend,
         List<WeakKeyDto> weakKeyRecommendations,
         PersonalBestsDto personalBests,
-        List<RecentSessionSummaryDto> recentSessions
+        List<RecentSessionSummaryDto> recentSessions,
+        WeakKeyOverviewDto weakKeyOverview
 ) {
+    public DashboardSummaryResponse(
+            UserStatusDto userStatus,
+            DailyGoalDto dailyGoal,
+            PrimaryMetricsDto primaryMetrics,
+            List<WeeklyActivityDayDto> weeklyActivity,
+            List<WpmTrendPointDto> wpmTrend,
+            List<WeakKeyDto> weakKeyRecommendations,
+            PersonalBestsDto personalBests,
+            List<RecentSessionSummaryDto> recentSessions
+    ) {
+        this(userStatus, dailyGoal, primaryMetrics, weeklyActivity, wpmTrend, weakKeyRecommendations, personalBests, recentSessions, null);
+    }
     public record UserStatusDto(
             String displayName,
             int currentLevel,
@@ -66,7 +79,32 @@ public record DashboardSummaryResponse(
             long errors,
             double wpi,
             String tier,
-            String explanation
+            String explanation,
+            int consecutiveCleanSessions,
+            boolean isMastered
+    ) {
+        public WeakKeyDto(
+                String keyChar,
+                double errorRate,
+                double accuracy,
+                long opportunities,
+                long errors,
+                double wpi,
+                String tier,
+                String explanation
+        ) {
+            this(keyChar, errorRate, accuracy, opportunities, errors, wpi, tier, explanation, 0, "Mastered".equalsIgnoreCase(tier));
+        }
+    }
+
+    public record WeakKeyOverviewDto(
+            String overallStatus, // INSUFFICIENT_DATA, WEAK, DEVELOPING, STABLE, MASTERED, NO_RECOMMENDATIONS
+            String headline,
+            String explanation,
+            int weakKeyCount,
+            int developingKeyCount,
+            int stableKeyCount,
+            int masteredKeyCount
     ) {}
 
     public record PersonalBestsDto(

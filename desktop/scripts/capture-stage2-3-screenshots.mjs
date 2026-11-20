@@ -125,6 +125,15 @@ async function main() {
       longestSessionSeconds: 2520.0,
     },
     recentSessions: [],
+    weakKeyOverview: {
+      overallStatus: "WEAK",
+      headline: "Algorithmic Weak-Key Remediation",
+      explanation: "Elevated friction detected on key reaches. Dedicated target-key drills recommended to restore motor cadence.",
+      weakKeyCount: 3,
+      developingKeyCount: 0,
+      stableKeyCount: 2,
+      masteredKeyCount: 1,
+    },
   };
 
   await page.route("**/api/v1/health", async (route) => {

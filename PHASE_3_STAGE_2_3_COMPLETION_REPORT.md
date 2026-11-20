@@ -136,13 +136,20 @@ This stage delivers:
 
 ## 4. Verification Evidence
 
-### 4.1 Automated Frontend Tests
-All 14 test suites and 54 tests pass cleanly:
+### 4.1 Automated Backend Tests (JUnit 5 & MockMvc)
+```
+.\backend\mvnw.cmd test -f backend/pom.xml
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+### 4.2 Automated Frontend Tests (Vitest & RTL)
+All 14 test suites and 59 tests pass cleanly:
 ```
  ✓ src/hooks/__tests__/useKeyboardShortcuts.test.ts (3 tests)
- ✓ src/features/dashboard/__tests__/WeeklyActivityChart.test.tsx (3 tests)
- ✓ src/features/dashboard/__tests__/WeakKeyHeroBanner.test.tsx (3 tests)
- ✓ src/features/dashboard/__tests__/WpmTrendChart.test.tsx (4 tests)
+ ✓ src/features/dashboard/__tests__/WeeklyActivityChart.test.tsx (4 tests)
+ ✓ src/features/dashboard/__tests__/WeakKeyHeroBanner.test.tsx (6 tests)
+ ✓ src/features/dashboard/__tests__/WpmTrendChart.test.tsx (5 tests)
  ✓ src/features/dashboard/__tests__/DailyGoalCapsule.test.tsx (4 tests)
  ✓ src/features/dashboard/__tests__/WelcomeStatusHeader.test.tsx (3 tests)
  ✓ src/features/dashboard/__tests__/PrimaryMetricCards.test.tsx (2 tests)
@@ -155,20 +162,23 @@ All 14 test suites and 54 tests pass cleanly:
  ✓ src/features/typing-test/__tests__/index.test.ts (3 tests)
 
  Test Files  14 passed (14)
-      Tests  54 passed (54)
+      Tests  59 passed (59)
 ```
 
-### 4.2 TypeScript Typecheck
+### 4.3 TypeScript Typecheck & ESLint
 ```
 npm --prefix desktop run typecheck
 Exit code: 0 (Zero type errors)
+
+npm --prefix desktop run lint
+Exit code: 0 (Zero lint errors)
 ```
 
-### 4.3 Frontend Production Build
+### 4.4 Frontend Production Build
 ```
 npm --prefix desktop run build
 ✓ 2194 modules transformed.
-✓ built in 18.53s
+✓ built in 20.28s
 Exit code: 0
 ```
 

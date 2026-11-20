@@ -176,6 +176,7 @@ export default function Dashboard() {
           <WeakKeyHeroBanner
             recommendations={summary.weakKeyRecommendations}
             completedSessionCount={summary.primaryMetrics.completedSessionCount}
+            overview={summary.weakKeyOverview}
           />
 
           {/* Row 4: Quick Practice Portals (W-07) */}

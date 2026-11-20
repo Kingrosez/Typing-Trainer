@@ -72,4 +72,20 @@ describe("WpmTrendChart (W-05)", () => {
     expect(screen.getByText("90.0% Acc")).toBeInTheDocument();
     expect(screen.getByText("5 Errors")).toBeInTheDocument();
   });
+
+  it("matches accessible table data with chronological sessions and error counts", () => {
+    render(<WpmTrendChart wpmTrend={mockTrendPoints} />);
+    const rows = screen.getAllByRole("row", { hidden: true });
+    // Row 1 (Session 1): Net 45 WPM, Acc 90%, 5 errors
+    expect(rows[1]).toHaveTextContent("1");
+    expect(rows[1]).toHaveTextContent("45");
+    expect(rows[1]).toHaveTextContent("90.0%");
+    expect(rows[1]).toHaveTextContent("5");
+
+    // Row 3 (Session 3): Net 60 WPM, Acc 96.8%, 2 errors
+    expect(rows[3]).toHaveTextContent("3");
+    expect(rows[3]).toHaveTextContent("60");
+    expect(rows[3]).toHaveTextContent("96.8%");
+    expect(rows[3]).toHaveTextContent("2");
+  });
 });

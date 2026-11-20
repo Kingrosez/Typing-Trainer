@@ -136,13 +136,20 @@ This stage delivers:
 
 ## 4. Verification Evidence
 
-### 4.1 Automated Frontend Tests
-All 14 test suites and 54 tests pass cleanly:
+### 4.1 Automated Backend Tests (JUnit 5 & MockMvc)
+```
+.\backend\mvnw.cmd test -f backend/pom.xml
+[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
+
+### 4.2 Automated Frontend Tests (Vitest & RTL)
+All 14 test suites and 59 tests pass cleanly:
 ```
  ✓ src/hooks/__tests__/useKeyboardShortcuts.test.ts (3 tests)
- ✓ src/features/dashboard/__tests__/WeeklyActivityChart.test.tsx (3 tests)
- ✓ src/features/dashboard/__tests__/WeakKeyHeroBanner.test.tsx (3 tests)
- ✓ src/features/dashboard/__tests__/WpmTrendChart.test.tsx (4 tests)
+ ✓ src/features/dashboard/__tests__/WeeklyActivityChart.test.tsx (4 tests)
+ ✓ src/features/dashboard/__tests__/WeakKeyHeroBanner.test.tsx (6 tests)
+ ✓ src/features/dashboard/__tests__/WpmTrendChart.test.tsx (5 tests)
  ✓ src/features/dashboard/__tests__/DailyGoalCapsule.test.tsx (4 tests)
  ✓ src/features/dashboard/__tests__/WelcomeStatusHeader.test.tsx (3 tests)
  ✓ src/features/dashboard/__tests__/PrimaryMetricCards.test.tsx (2 tests)
@@ -155,24 +162,27 @@ All 14 test suites and 54 tests pass cleanly:
  ✓ src/features/typing-test/__tests__/index.test.ts (3 tests)
 
  Test Files  14 passed (14)
-      Tests  54 passed (54)
+      Tests  59 passed (59)
 ```
 
-### 4.2 TypeScript Typecheck
+### 4.3 TypeScript Typecheck & ESLint
 ```
 npm --prefix desktop run typecheck
 Exit code: 0 (Zero type errors)
+
+npm --prefix desktop run lint
+Exit code: 0 (Zero lint errors)
 ```
 
-### 4.3 Frontend Production Build
+### 4.4 Frontend Production Build
 ```
 npm --prefix desktop run build
 ✓ 2194 modules transformed.
-✓ built in 18.53s
+✓ built in 20.28s
 Exit code: 0
 ```
 
-### 4.4 Visual Verification Screenshots
+### 4.5 Visual Verification Screenshots
 High-resolution 1440 × 900 screenshots captured and saved to `design/implementation/screenshots/`:
 - `10_dashboard_stage_2_3_dark.png` — Dark theme Dashboard showing W-01, W-02, W-03, W-04 (Weekly Activity with Goal Met badges and Today ring), W-05 (15-session WPM trend with error spikes), W-06 (Weak Key remediation banner), and W-07.
 - `11_dashboard_stage_2_3_light.png` — Light theme Dashboard verifying high-contrast color token mapping, borders, and typography.
@@ -207,8 +217,10 @@ High-resolution 1440 × 900 screenshots captured and saved to `design/implementa
 - [x] W-04 Weekly Activity Chart implemented with goal threshold and accessible fallback.
 - [x] W-05 WPM Performance Trend Curve implemented with error spike detection and accessible fallback.
 - [x] W-06 Weak-Key Hero Banner implemented with remediation badges, drill routing, mastery, and zero states.
-- [x] All 54 unit and integration tests passing.
+- [x] All 50 backend tests passing.
+- [x] All 59 frontend unit and integration tests passing.
 - [x] TypeScript strict typecheck passing with zero errors.
+- [x] ESLint passing with zero errors.
 - [x] Production build passing.
 - [x] Visual evidence captured at 1440 × 900 in dark and light themes.
 - [x] Strict scope boundary respected (W-08, W-09, W-10 NOT started).
