@@ -8,6 +8,9 @@ import type { DashboardSummaryResponse } from "@/services/api/dashboardTypes";
 import { WelcomeStatusHeader } from "./components/WelcomeStatusHeader";
 import { DailyGoalCapsule } from "./components/DailyGoalCapsule";
 import { PrimaryMetricCards } from "./components/PrimaryMetricCards";
+import { WeeklyActivityChart } from "./components/WeeklyActivityChart";
+import { WpmTrendChart } from "./components/WpmTrendChart";
+import { WeakKeyHeroBanner } from "./components/WeakKeyHeroBanner";
 import { QuickPracticeCards } from "./components/QuickPracticeCards";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
 
@@ -159,6 +162,21 @@ export default function Dashboard() {
 
           {/* Row 1: Four Primary Metric Cards (W-03) */}
           <PrimaryMetricCards metrics={summary.primaryMetrics} />
+
+          {/* Row 2: Dual Telemetry Charts (W-04 & W-05) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <WeeklyActivityChart
+              weeklyActivity={summary.weeklyActivity}
+              targetMinutes={summary.dailyGoal.targetMinutes}
+            />
+            <WpmTrendChart wpmTrend={summary.wpmTrend} />
+          </div>
+
+          {/* Row 3: Algorithmic Weak-Key Remediation Banner (W-06) */}
+          <WeakKeyHeroBanner
+            recommendations={summary.weakKeyRecommendations}
+            completedSessionCount={summary.primaryMetrics.completedSessionCount}
+          />
 
           {/* Row 4: Quick Practice Portals (W-07) */}
           <QuickPracticeCards />

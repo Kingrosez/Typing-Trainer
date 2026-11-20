@@ -10,13 +10,15 @@ export function useKeyboardShortcuts() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if user is actively typing inside an input, textarea, or contentEditable element
+      // Check if user is actively typing inside an input, textarea, or contentEditable element,
+      // or if an accessible modal dialog is currently open
       const target = e.target as HTMLElement | null;
       const isInputFocused =
         target &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
+      const isDialogOpen = typeof document !== "undefined" && document.querySelector('[role="dialog"]') !== null;
 
       const hasCtrl = e.ctrlKey || e.metaKey;
 
@@ -27,8 +29,8 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // If active typing in input, DO NOT intercept other shortcuts
-      if (isInputFocused) {
+      // If active typing in input or modal dialog is active, DO NOT intercept other shortcuts
+      if (isInputFocused || isDialogOpen) {
         return;
       }
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Zap, GraduationCap, Target, Code2, Gamepad2, ArrowRight } from "lucide-react";
 
@@ -74,22 +74,6 @@ const PRACTICE_CARDS: PracticeCard[] = [
 
 export const QuickPracticeCards: React.FC = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl modifier without Alt or Shift
-      if (e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const card = PRACTICE_CARDS.find((c) => c.shortcutKey === e.key);
-        if (card) {
-          e.preventDefault();
-          navigate(card.route);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
 
   return (
     <section aria-label="Practice Arenas">

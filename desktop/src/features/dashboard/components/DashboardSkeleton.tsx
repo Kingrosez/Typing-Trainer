@@ -35,6 +35,42 @@ export const DashboardSkeleton: React.FC = () => {
         ))}
       </div>
 
+      {/* Row 2: Dual Telemetry Charts Skeleton (Weekly Activity & WPM Trend) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="p-5 rounded-xl border border-border bg-card/50 space-y-4 h-64">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <div className="h-4 w-40 bg-secondary rounded" />
+              <div className="h-3 w-52 bg-secondary/70 rounded" />
+            </div>
+            <div className="h-3 w-28 bg-secondary/70 rounded" />
+          </div>
+          <div className="h-36 bg-secondary/30 rounded-lg" />
+        </div>
+        <div className="p-5 rounded-xl border border-border bg-card/50 space-y-4 h-64">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <div className="h-4 w-44 bg-secondary rounded" />
+              <div className="h-3 w-48 bg-secondary/70 rounded" />
+            </div>
+            <div className="h-3 w-24 bg-secondary/70 rounded" />
+          </div>
+          <div className="h-36 bg-secondary/30 rounded-lg" />
+        </div>
+      </div>
+
+      {/* Row 3: Weak-Key Recommendation Banner Skeleton */}
+      <div className="p-5 rounded-xl border border-border bg-card/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 h-32 sm:h-24">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-secondary shrink-0" />
+          <div className="space-y-2">
+            <div className="h-4 w-48 bg-secondary rounded" />
+            <div className="h-3 w-80 max-w-full bg-secondary/70 rounded" />
+          </div>
+        </div>
+        <div className="h-9 w-44 bg-secondary rounded-lg shrink-0" />
+      </div>
+
       {/* Row 4: Quick Practice Cards Skeleton */}
       <div className="space-y-3">
         <div className="h-4 w-32 bg-secondary rounded" />

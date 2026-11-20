@@ -49,28 +49,4 @@ describe("QuickPracticeCards (W-07)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Typing Games/i }));
     expect(mockNavigate).toHaveBeenCalledWith("/typing-games");
   });
-
-  it("handles Ctrl+2 through Ctrl+6 keyboard accelerators", () => {
-    render(<QuickPracticeCards />);
-
-    // Ctrl+2 -> /typing-test
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "2", ctrlKey: true }));
-    expect(mockNavigate).toHaveBeenCalledWith("/typing-test");
-
-    // Ctrl+3 -> /learning-mode
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "3", ctrlKey: true }));
-    expect(mockNavigate).toHaveBeenCalledWith("/learning-mode");
-
-    // Ctrl+4 -> /skill-drills
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "4", ctrlKey: true }));
-    expect(mockNavigate).toHaveBeenCalledWith("/skill-drills");
-
-    // Ctrl+5 -> /developer-mode
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "5", ctrlKey: true }));
-    expect(mockNavigate).toHaveBeenCalledWith("/developer-mode");
-
-    // Ctrl+6 -> /typing-games
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "6", ctrlKey: true }));
-    expect(mockNavigate).toHaveBeenCalledWith("/typing-games");
-  });
 });

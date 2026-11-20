@@ -86,6 +86,15 @@ describe("Dashboard Page (Stage 2.2 Integration)", () => {
     expect(screen.getByText("55.4")).toBeInTheDocument();
     expect(screen.getByText("97.2%")).toBeInTheDocument();
 
+    // W-04: Weekly Activity Chart
+    expect(screen.getByText("Weekly Practice Activity")).toBeInTheDocument();
+
+    // W-05: WPM Trend Chart
+    expect(screen.getByText("Speed & Consistency Trend")).toBeInTheDocument();
+
+    // W-06: Weak-Key Remediation Banner
+    expect(screen.getByText(/Flawless Precision 🌟/i)).toBeInTheDocument();
+
     // W-07: Arenas
     expect(screen.getByText("Typing Test Arena")).toBeInTheDocument();
     expect(screen.getByText("Learning Mode")).toBeInTheDocument();
