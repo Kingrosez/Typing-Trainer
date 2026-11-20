@@ -1,8 +1,9 @@
 # PHASE 3 STAGE 2.3: FINAL GOVERNANCE RECONCILIATION REPORT
 
 **Project:** Typing Trainer  
-**Current Baseline Commit:** `3f9d608`  
+**Current Baseline Commit:** `8d53e05`  
 **Previous Baseline:** `baa0daa`  
+**Intermediate Commits:** `3f9d608`, `29e942b`  
 **Scope:** Phase 3 Stage 2.3 (Governance Audit & Reconciled Telemetry Implementation)  
 **Product Owner:** Fairoz  
 **Lead Engineer:** Antigravity  
@@ -74,7 +75,7 @@ A comprehensive governance and implementation audit of Phase 3 Stage 2.3 was per
   - Character position uniqueness: In the D6 position-level error model, each character position contributes at most one error to intended key $k$.
   - Repeated Backspace handling: Striking Backspace and retyping an incorrect character at the same position does not inflate the error count beyond 1.
   - Corrected mistakes: When a user strikes an incorrect character and then backspaces to type the correct character, the error is retained in diagnostics and confusion matrix for intended key $k$, while total opportunities remains 1.
-  - Tested in: `D6ErrorAttributionAndMasteryTest.java` (`testPositionLevelErrorAttribution`, `testSampleEligibilityBoundary`, `testRollingWindowBoundaryAnd100StrokeCap`).
+  - Tested in: `D6ErrorAttributionAndMasteryTest.java` (`testPositionLevelErrorAttribution`, `testSampleEligibilityBoundary`, `testRollingWindowBoundaryAnd100StrokeCap`, `testTwoCleanSessionsStaysStable`, `testExactly101OpportunitiesCappedAt100`).
 
 ### 2.3 Item 3: W-04 Weekly Activity Verification
 - **Monday-to-Sunday Grouping:**
@@ -99,10 +100,11 @@ A comprehensive governance and implementation audit of Phase 3 Stage 2.3 was per
 - **Telemetry Display:**
   15 most recent sessions are retrieved from `typingSessionRepository.findRecentSessions(PageRequest.of(0, 15))` and sorted chronologically:
   `sorted(Comparator.comparing(TypingSessionEntity::getCompletedAt))`
+  Frontend component additionally enforces `.slice(-15)` and sanitizes null or corrupt points.
 - **Metric Definitions:**
   Net WPM is plotted consistently with D3/D4 formulas ($\text{Net WPM} = \frac{\text{Correct Characters} / 5}{\text{Minutes}}$).
 - **Error Spikes:**
-  Points where `totalErrors > 4` are illuminated in coral red (`#EF4444`).
+  Points where `totalErrors > 4` are illuminated in coral red (`#EF4444`). Points with $\le 4$ errors maintain standard cobalt node style (`#2563EB`).
 - **Telemetry Boundaries:**
   - $N = 0$: Clean empty state.
   - $N = 1$: Insufficient Data state explaining that $\ge 2$ sessions are required to establish trend curve.
@@ -128,9 +130,18 @@ A comprehensive governance and implementation audit of Phase 3 Stage 2.3 was per
   `rewardEventId = "DAILY_GOAL_" + userId + "_" + localDate` is protected by `PRIMARY KEY` in `user_reward_ledger`. Duplicate crediting within the same local calendar day is physically impossible.
 - **Single Shortcut Owner & Focus Guards:**
   - `QuickPracticeCards.tsx` has no keyboard listeners.
-  - `AppShell.tsx` executes `useKeyboardShortcuts.ts` with guards:
+  - `AppShell.tsx` executes `useKeyboardShortcuts.ts` with guards across inputs, textareas, contentEditable nodes, and modal dialogs:
     ```ts
-    const isInputFocused = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+    const isTargetInput = (el: HTMLElement | null) =>
+      Boolean(el) &&
+      (el?.tagName === "INPUT" ||
+        el?.tagName === "TEXTAREA" ||
+        Boolean(el?.isContentEditable) ||
+        el?.contentEditable === "true" ||
+        el?.getAttribute?.("contenteditable") === "true" ||
+        el?.getAttribute?.("contenteditable") === "");
+
+    const isInputFocused = isTargetInput(target) || isTargetInput(activeEl);
     const isDialogOpen = typeof document !== "undefined" && document.querySelector('[role="dialog"]') !== null;
     if (isInputFocused || isDialogOpen) return;
     ```
@@ -146,10 +157,10 @@ A comprehensive governance and implementation audit of Phase 3 Stage 2.3 was per
 ```
 **Result:**
 ```
-[INFO] Tests run: 50, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 54, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
-*(All 50 tests pass, including the new mastery lifecycle, timezone boundaries, and error attribution test suites).*
+*(All 54 tests pass, including the new mastery lifecycle, 2-session stability gate, 101-opportunity cap, daily goal reward ledger uniqueness, timezone boundaries, and error attribution test suites).*
 
 ### 3.2 Frontend Test Suite (Vitest / React Testing Library)
 ```powershell
@@ -158,9 +169,9 @@ npm --prefix desktop test
 **Result:**
 ```
  Test Files  14 passed (14)
-      Tests  59 passed (59)
+      Tests  64 passed (64)
 ```
-*(All 59 tests pass across 14 test suites).*
+*(All 64 tests pass across 14 test suites, including expanded tests for latest-15 session slicing, error spike threshold styling, null telemetry tolerance, Ctrl+1..8 / Ctrl+, navigation, and input/textarea/contenteditable focus suppression).*
 
 ### 3.3 TypeScript Strict Typecheck
 ```powershell
@@ -181,8 +192,8 @@ npm --prefix desktop run build
 **Result:**
 ```
 ✓ 2194 modules transformed.
-✓ built in 20.28s
-dist/assets/index-Dyn0e91f.js   372.56 kB │ gzip: 105.74 kB
+✓ built in 21.72s
+dist/assets/index-sskDodjO.js   373.26 kB │ gzip: 105.95 kB
 ```
 
 ### 3.6 Visual Screenshot Verification (1440 × 900)
@@ -196,24 +207,29 @@ dist/assets/index-Dyn0e91f.js   372.56 kB │ gzip: 105.74 kB
 ## 4. Git and Working Tree Status
 
 - **Previous Baseline Commit:** `baa0daa`
-- **Intermediate Stage 2.3 Commit:** `3f9d608`
+- **Intermediate Stage 2.3 Commits:** `3f9d608`, `29e942b`
+- **Current Head Commit:** `8d53e05`
 - **Files Modified / Added in this Reconciliation:**
   - `backend/src/main/java/com/typingtrainer/dashboard/dto/DashboardSummaryResponse.java`
   - `backend/src/main/java/com/typingtrainer/dashboard/service/DashboardService.java`
   - `backend/src/main/java/com/typingtrainer/gamification/service/GamificationService.java`
   - `backend/src/main/java/com/typingtrainer/recommendation/dto/WeakKeyRecommendation.java`
   - `backend/src/main/java/com/typingtrainer/recommendation/service/RecommendationService.java`
-  - `backend/src/test/java/com/typingtrainer/dashboard/service/DashboardServiceTest.java` (New)
-  - `backend/src/test/java/com/typingtrainer/recommendation/D6ErrorAttributionAndMasteryTest.java` (New)
+  - `backend/src/test/java/com/typingtrainer/dashboard/service/DashboardServiceTest.java`
+  - `backend/src/test/java/com/typingtrainer/gamification/service/GamificationServiceTest.java`
+  - `backend/src/test/java/com/typingtrainer/recommendation/D6ErrorAttributionAndMasteryTest.java`
   - `backend/src/test/java/com/typingtrainer/recommendation/service/RecommendationServiceTest.java`
   - `desktop/eslint.config.js`
   - `desktop/scripts/capture-stage2-3-screenshots.mjs`
   - `desktop/src/features/dashboard/Dashboard.tsx`
   - `desktop/src/features/dashboard/components/WeakKeyHeroBanner.tsx`
+  - `desktop/src/features/dashboard/components/WpmTrendChart.tsx`
   - `desktop/src/features/dashboard/__tests__/Dashboard.test.tsx`
   - `desktop/src/features/dashboard/__tests__/WeakKeyHeroBanner.test.tsx`
   - `desktop/src/features/dashboard/__tests__/WeeklyActivityChart.test.tsx`
   - `desktop/src/features/dashboard/__tests__/WpmTrendChart.test.tsx`
+  - `desktop/src/hooks/useKeyboardShortcuts.ts`
+  - `desktop/src/hooks/__tests__/useKeyboardShortcuts.test.ts`
   - `desktop/src/services/api/dashboardTypes.ts`
   - `design/implementation/screenshots/10_dashboard_stage_2_3_dark.png`
   - `design/implementation/screenshots/11_dashboard_stage_2_3_light.png`
@@ -228,8 +244,8 @@ dist/assets/index-Dyn0e91f.js   372.56 kB │ gzip: 105.74 kB
 - [x] Verified W-04 weekly activity Monday-to-Sunday grouping and user-local calendar timezone boundaries.
 - [x] Verified W-05 WPM trend (chronological order, Net WPM, error spikes, empty/insufficient states).
 - [x] Verified Stage 2.2 findings (reward transaction guard, shortcut ownership, focus guards).
-- [x] 50 backend tests passing.
-- [x] 59 frontend tests passing.
+- [x] 54 backend tests passing (0 failures).
+- [x] 64 frontend tests passing (0 failures).
 - [x] TypeScript typecheck clean (0 errors).
 - [x] ESLint clean (0 errors).
 - [x] Production build clean.
