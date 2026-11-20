@@ -108,6 +108,7 @@ export interface RecentSessionSummaryDto {
   durationSeconds: number;
   xpEarned: number;
   completedAt: string;
+  isOfficialBenchmark?: boolean;
 }
 
 export interface DashboardSummaryResponse {

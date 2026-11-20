@@ -53,7 +53,7 @@ export const RecentSessionsTable: React.FC<RecentSessionsTableProps> = ({
       ? paginatedData
       : initialSessions.slice(0, pageSize).map((s) => ({
           ...s,
-          isOfficialBenchmark: s.sessionMode === "TYPING_TEST" && s.durationSeconds >= 15 && s.accuracy >= 95.0,
+          isOfficialBenchmark: s.isOfficialBenchmark ?? false,
         }));
 
   const fetchPage = useCallback(
@@ -107,6 +107,7 @@ export const RecentSessionsTable: React.FC<RecentSessionsTableProps> = ({
     if (!isoString) return "—";
     try {
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "—";
       return date.toLocaleString(undefined, {
         month: "short",
         day: "numeric",
@@ -115,7 +116,7 @@ export const RecentSessionsTable: React.FC<RecentSessionsTableProps> = ({
         hour12: true,
       });
     } catch {
-      return isoString;
+      return "—";
     }
   };
 

@@ -246,7 +246,8 @@ public class DashboardService {
                         s.getTotalErrors(),
                         s.getDurationSeconds(),
                         s.getXpEarned(),
-                        s.getCompletedAt().toString()
+                        s.getCompletedAt().toString(),
+                        s.isOfficialBenchmark()
                 ))
                 .toList();
 

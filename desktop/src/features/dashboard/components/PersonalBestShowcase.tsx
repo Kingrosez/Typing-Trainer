@@ -53,6 +53,7 @@ export const PersonalBestShowcase: React.FC<PersonalBestShowcaseProps> = ({
     if (!dateStr) return null;
     try {
       const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return null;
       return d.toLocaleDateString(undefined, {
         month: "short",
         day: "numeric",

@@ -27,6 +27,7 @@ describe("RecentSessionsTable (W-10)", () => {
       durationSeconds: 60.0,
       xpEarned: 50,
       completedAt: "2026-11-20T10:00:00Z",
+      isOfficialBenchmark: true,
     },
     {
       id: "sess-2",
@@ -38,6 +39,7 @@ describe("RecentSessionsTable (W-10)", () => {
       durationSeconds: 120.0,
       xpEarned: 40,
       completedAt: "2026-11-19T14:30:00Z",
+      isOfficialBenchmark: false,
     },
     {
       id: "sess-3",
@@ -49,6 +51,7 @@ describe("RecentSessionsTable (W-10)", () => {
       durationSeconds: 180.0,
       xpEarned: 30,
       completedAt: "2026-11-18T16:00:00Z",
+      isOfficialBenchmark: false,
     },
   ];
 
@@ -194,5 +197,44 @@ describe("RecentSessionsTable (W-10)", () => {
     render(<RecentSessionsTable initialSessions={[]} isLoading={true} />);
 
     expect(screen.getByLabelText("Loading Recent Practice Sessions")).toBeInTheDocument();
+  });
+
+  it("respects authoritative backend isOfficialBenchmark flag and does not classify custom or non-qualifying sessions as official", () => {
+    const customCorpusSession: RecentSessionSummaryDto = {
+      id: "sess-custom",
+      sessionMode: "CUSTOM_TEXT",
+      netWpm: 90.0,
+      grossWpm: 92.0,
+      accuracy: 99.0,
+      totalErrors: 1,
+      durationSeconds: 60.0,
+      xpEarned: 60,
+      completedAt: "2026-11-20T11:00:00Z",
+      isOfficialBenchmark: false, // Authoritative: custom corpus cannot be official benchmark
+    };
+
+    render(<RecentSessionsTable initialSessions={[customCorpusSession]} />);
+
+    expect(screen.getByText("Practice")).toBeInTheDocument();
+    expect(screen.queryByText("Official")).not.toBeInTheDocument();
+  });
+
+  it("safely handles invalid date format by displaying fallback dash", () => {
+    const invalidDateSession: RecentSessionSummaryDto = {
+      id: "sess-invalid-date",
+      sessionMode: "TYPING_TEST",
+      netWpm: 60.0,
+      grossWpm: 62.0,
+      accuracy: 95.0,
+      totalErrors: 2,
+      durationSeconds: 60.0,
+      xpEarned: 40,
+      completedAt: "not-a-valid-date",
+      isOfficialBenchmark: false,
+    };
+
+    render(<RecentSessionsTable initialSessions={[invalidDateSession]} />);
+
+    expect(screen.getByText("—")).toBeInTheDocument();
   });
 });

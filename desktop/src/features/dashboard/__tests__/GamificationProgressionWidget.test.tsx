@@ -192,6 +192,40 @@ describe("GamificationProgressionWidget (W-08)", () => {
     expect(screen.getByText("Goal: 25%")).toBeInTheDocument();
   });
 
+  it("never infers +150 XP reward credit from daily goal percentage alone when isCompletedToday is false", () => {
+    const reachedGoalWithoutConfirmedReward: DailyGoalDto = {
+      targetMinutes: 20,
+      completedSecondsToday: 1200,
+      remainingSecondsToday: 0,
+      progressPercentage: 100.0,
+      isCompletedToday: false, // Reward not yet confirmed by ledger
+    };
+
+    const status: UserStatusDto = {
+      displayName: "Alex",
+      currentLevel: 5,
+      currentTier: "Novice",
+      totalXp: 1200,
+      xpProgressInLevel: 200,
+      xpRequiredForNextLevel: 400,
+      levelProgressPercentage: 50.0,
+      currentStreakDays: 3,
+      longestStreakDays: 7,
+      freezeShieldsAvailable: 0,
+    };
+
+    render(
+      <GamificationProgressionWidget
+        userStatus={status}
+        dailyGoal={reachedGoalWithoutConfirmedReward}
+      />
+    );
+
+    // Must show Goal: 100% and MUST NOT show Goal Met (+150 XP)
+    expect(screen.getByText("Goal: 100%")).toBeInTheDocument();
+    expect(screen.queryByText(/Goal Met \(\+150 XP\)/i)).not.toBeInTheDocument();
+  });
+
   it("renders loading skeleton state when isLoading is true", () => {
     const status: UserStatusDto = {
       displayName: "Alex",

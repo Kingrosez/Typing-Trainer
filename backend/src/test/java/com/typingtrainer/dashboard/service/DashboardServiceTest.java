@@ -253,4 +253,29 @@ class DashboardServiceTest {
         assertThat(pb.longestSessionAccuracy()).isNull();
         assertThat(pb.longestSessionDate()).isNull();
     }
+
+    @Test
+    @DisplayName("W-10 Recent Sessions: Accurately maps isOfficialBenchmark from TypingSessionEntity")
+    void testRecentSessionsMapsOfficialBenchmarkFlag() {
+        TypingSessionEntity officialSession = new TypingSessionEntity(
+                UUID.randomUUID(), 65.0, 64.0, 98.5, 1, 325, 320, 60.0, "passage",
+                Instant.parse("2026-11-20T12:00:00Z"), "TYPING_TEST", 60, true, 80
+        );
+        TypingSessionEntity practiceSession = new TypingSessionEntity(
+                UUID.randomUUID(), 55.0, 52.0, 92.0, 5, 275, 260, 60.0, "custom passage",
+                Instant.parse("2026-11-20T10:00:00Z"), "CUSTOM_TEXT", 60, false, 45
+        );
+
+        when(typingSessionRepository.findRecentSessions(any(Pageable.class)))
+                .thenReturn(List.of(officialSession, practiceSession));
+
+        DashboardSummaryResponse response = dashboardService.getDashboardSummary(ZoneId.of("UTC"));
+        List<DashboardSummaryResponse.RecentSessionSummaryDto> recent = response.recentSessions();
+
+        assertThat(recent).hasSize(2);
+        assertThat(recent.get(0).isOfficialBenchmark()).isTrue();
+        assertThat(recent.get(0).sessionMode()).isEqualTo("TYPING_TEST");
+        assertThat(recent.get(1).isOfficialBenchmark()).isFalse();
+        assertThat(recent.get(1).sessionMode()).isEqualTo("CUSTOM_TEXT");
+    }
 }

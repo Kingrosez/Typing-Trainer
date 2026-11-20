@@ -131,4 +131,20 @@ describe("PersonalBestShowcase (W-09)", () => {
 
     expect(screen.getByLabelText("Loading Personal Bests")).toBeInTheDocument();
   });
+
+  it("safely handles invalid date strings without crashing or rendering Invalid Date", () => {
+    const invalidDatePbs: PersonalBestsDto = {
+      best15sWpm: 80.0,
+      best60sWpm: null,
+      bestDevModeWpm: null,
+      longestSessionSeconds: null,
+      best15sAccuracy: 98.0,
+      best15sDate: "not-a-valid-date",
+    };
+
+    render(<PersonalBestShowcase personalBests={invalidDatePbs} />);
+
+    expect(screen.getByText("80 WPM")).toBeInTheDocument();
+    expect(screen.queryByText(/Invalid Date/i)).not.toBeInTheDocument();
+  });
 });

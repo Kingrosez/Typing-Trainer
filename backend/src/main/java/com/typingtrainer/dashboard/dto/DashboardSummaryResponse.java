@@ -169,6 +169,21 @@ public record DashboardSummaryResponse(
             int totalErrors,
             double durationSeconds,
             int xpEarned,
-            String completedAt
-    ) {}
+            String completedAt,
+            boolean isOfficialBenchmark
+    ) {
+        public RecentSessionSummaryDto(
+                String id,
+                String sessionMode,
+                double netWpm,
+                double grossWpm,
+                double accuracy,
+                int totalErrors,
+                double durationSeconds,
+                int xpEarned,
+                String completedAt
+        ) {
+            this(id, sessionMode, netWpm, grossWpm, accuracy, totalErrors, durationSeconds, xpEarned, completedAt, false);
+        }
+    }
 }
