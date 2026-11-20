@@ -1,172 +1,85 @@
 # Typing Trainer
 
-An offline-first Windows desktop application for improving typing speed, accuracy, and consistency through structured lessons, timed tests, coding practice, games, and performance analytics.
+An offline-first Windows desktop application for improving typing speed, accuracy, and consistency through structured lessons, timed tests, coding practice, games, and deterministic performance analytics.
 
-> **Status:** Planning / requirements discussion. Features and technology choices below are proposals, not completed functionality.
+> **Status:** Active Implementation — Phase 3 (Dashboard Integration Complete). Desktop shell, Spring Boot backend process supervision, SQLite persistence, and Dashboard widgets W-01 through W-10 are fully implemented and verified.
 
 ## Product goals
 
-- Help users progress from beginner to advanced touch typing.
-- Provide accurate, actionable feedback on typing speed, accuracy, and difficult keys.
-- Make practice engaging with challenges, achievements, and configurable experiences.
-- Work offline by default, keeping user progress locally.
-- Offer specialized typing practice for developers.
+- Help users progress from beginner to advanced touch typing through structured practice.
+- Provide deterministic, explainable feedback on typing speed, accuracy, and difficult keys.
+- Make practice engaging with achievements, streaks, and gamification rewards without cloud dependency.
+- Work offline by default, keeping all user telemetry and progress locally on the workstation.
+- Offer specialized typing practice for software developers.
 
 ## Target users
 
-Beginners, students, professionals, developers, and anyone seeking to improve typing proficiency. The final target audience is to be confirmed.
+Beginners, students, touch-typing learners, professionals, and developers seeking to improve motor cadence, speed, and accuracy.
 
-## Proposed features
+## Implemented Features (Phase 3 Dashboard)
 
-### 1. Dashboard
+### 1. Dashboard Overview (Widgets W-01 through W-10)
+- **W-01 Welcome and User Status:** Personalized greeting, current level, tier rank pill, streak flame counter, and new/returning user context.
+- **W-02 Daily Practice Goal:** Interactive SVG progress ring, target vs. completed practice duration, 1–120 minute target modal, and ledger-verified +150 XP bonus indicator.
+- **W-03 Primary Metrics:** Best 60s WPM, trailing 30-session average WPM, overall accuracy percentage, and total practice duration.
+- **W-04 Weekly Activity Chart:** 7-day practice duration bar chart with daily goal threshold indicators and today highlight.
+- **W-05 WPM Trend Chart:** Trailing session Net vs. Gross WPM progression curve with error spike badges.
+- **W-06 Algorithmic Weak-Key Remediation:** Deterministic D6 error analysis across 6 distinct states (`INSUFFICIENT_DATA`, `WEAK`, `DEVELOPING`, `STABLE`, `MASTERED`, `NO_RECOMMENDATIONS`).
+- **W-07 Quick Practice Navigation:** Direct routing to Typing Test Arena (`Ctrl+2`), Learning Mode (`Ctrl+3`), Skill Drills (`Ctrl+4`), Developer Mode (`Ctrl+5`), and Typing Games (`Ctrl+6`).
+- **W-08 Gamification Progression Hub:** Dual-gradient level crest (`#2563EB` to `#06B6D4`), level XP progress bar, remaining XP to next tier, daily streak counter, and streak freeze shield inventory (2-shield max).
+- **W-09 Personal Best Showcase:** 4-card verified benchmark grid (15s Speed Sprint, featured gold 60s Official Benchmark, Dev Studio, Longest Session) displaying verified winning session accuracy and timestamps.
+- **W-10 Recent Practice Sessions Table:** Semantic accessible table rendering practice mode badges, duration, net/gross speed, tiered accuracy, XP credit, and authoritative benchmark status with zero-redundancy initial mounting and on-demand pagination.
 
-- Daily practice overview and goals
-- Recent sessions, personal bests, and streaks
-- Quick access to tests and lessons
+### 2. Practice Arenas
+- **Typing Test Arena:** Standard benchmarks (15s, 30s, 60s, custom text) with live accuracy and WPM graphs.
+- **Learning Mode:** Finger-by-finger curriculum advancing from home-row upwards.
+- **Skill Drills:** Targeted bigram, pinky isolation, and punctuation drills.
+- **Developer Mode:** Programming syntax practice across TypeScript, Rust, Java, and Bash snippets.
+- **Typing Games:** Arcade gamified practice arenas (Meteor Descent, Ghost Typist).
 
-### 2. Typing tests
+## Approved Technology Stack
 
-- Preset durations: 15, 30, 60, and 120 seconds
-- Custom duration and practice text
-- Live WPM, accuracy, error count, and progress
-- Highlight correct and incorrect characters
-- Session summary and history
+| Layer | Selected Technology | Responsibility |
+|---|---|---|
+| Desktop shell | Tauri 2 | Windows application window, native integration, lifecycle, packaging |
+| Desktop native layer | Rust | Tauri commands and backend process supervision via Windows Job Objects |
+| UI Framework | React + TypeScript | Reactive component model with strict TypeScript typing |
+| Styling | Tailwind CSS | Modern styling system conforming to D2 design tokens |
+| UI components | shadcn/ui + Lucide Icons | Accessible, keyboard-navigable component foundation |
+| Frontend state | Zustand | Centralized state management for app shell, navigation, and audio |
+| Backend | Spring Boot 3, Java 21 | Business services, level progression curves, analytics, and session logic |
+| Persistence | SQLite 3 | Offline single-user local database stored in `%LOCALAPPDATA%\TypingTrainer` |
+| Migrations | Flyway | Versioned database schema evolution |
+| Charts | Recharts | SVG telemetry and trend visualizations |
+| Build Tooling | Vite + Maven Wrapper | Fast frontend asset bundling and deterministic backend builds |
 
-### 3. Learning mode
+**Architecture principle:** The real-time typing interaction loop executes exclusively in the React frontend. Individual keystrokes are processed locally in memory. The local Spring Boot backend manages persistence, session delivery, analytics, and gamification progression. No local LLMs, Ollama, or remote telemetry transmission are utilized.
 
-- Beginner-to-advanced lesson progression
-- Home-row, finger-placement, and individual-key exercises
-- Adaptive lessons based on commonly missed keys
-- Optional visual keyboard and finger guidance
+## Application Navigation
 
-### 4. Typing games and challenges
+1. **Dashboard** (`Ctrl+1`)
+2. **Typing Test** (`Ctrl+2`)
+3. **Learning Mode** (`Ctrl+3`)
+4. **Skill Drills** (`Ctrl+4`)
+5. **Developer Mode** (`Ctrl+5`)
+6. **Typing Games** (`Ctrl+6`)
+7. **Analytics** (`Ctrl+7`)
+8. **Achievements** (`Ctrl+8`)
+9. **Settings** (`Ctrl+,`)
 
-- Word challenge, time attack, and falling words
-- Accuracy-focused challenges
-- Achievements, milestones, and personal records
+## Typing Metrics Definitions
 
-### 5. Developer typing mode
+- **Gross WPM:** $(\text{Total Typed Characters} / 5) / \text{Elapsed Minutes}$.
+- **Accuracy:** $(\text{Correct Characters} / \text{Evaluated Characters}) \times 100\%$.
+- **Net WPM:** $\text{Gross WPM} - (\text{Uncorrected Errors} / \text{Elapsed Minutes})$.
+- **XP Progression:** Base effort XP calculated with half-up rounding, multiplied by accuracy scaling, with level progression curve $\text{round}(120 \times L^{1.35})$.
 
-- Practice Java, JavaScript/TypeScript, Python, SQL, JSON, and terminal commands
-- Syntax-focused exercises with punctuation and symbols
-- User-provided code snippets
+## Non-Functional Requirements
 
-### 6. Analytics
-
-- WPM and accuracy trends over time
-- Session history and personal bests
-- Weak-key and error-frequency analysis
-- Daily and weekly progress reports
-
-### 7. Customization
-
-- Light and dark themes
-- Font, color, and sound preferences
-- Keyboard layout options
-- Custom text import (TXT)
-
-### 8. Optional AI coach
-
-- Personalized practice recommendations
-- Adaptive difficulty and lesson suggestions
-- Potential local Ollama integration
-- Core typing functionality must not depend on AI
-
-## Proposed technology stack
-
-| Layer | Candidate technology |
-| --- | --- |
-| Desktop runtime | Tauri 2 |
-| UI | React + TypeScript |
-| Styling | Tailwind CSS + shadcn/ui |
-| Frontend build | Vite |
-| Local persistence | SQLite |
-| Desktop commands | Rust / Tauri commands |
-| Charts | Recharts |
-| State management | Zustand |
-| Optional AI | Local Ollama |
-
-**Architecture principle:** Keep timing, scoring, and keystroke analysis deterministic. AI may recommend lessons but should not be responsible for calculating typing metrics.
-
-## Proposed application navigation
-
-1. Dashboard
-2. Typing Test
-3. Learning
-4. Typing Games
-5. Developer Mode
-6. Analytics
-7. Achievements
-8. Settings
-
-## Typing metrics (initial definitions)
-
-- **Gross WPM:** Typed characters / 5 / elapsed minutes.
-- **Accuracy:** Correctly typed characters / evaluated characters × 100.
-- **Net WPM:** To be finalized along with error and correction handling.
-- **Error tracking:** Record incorrect keystrokes and aggregate error frequency per key.
-
-These definitions require validation for backspaces, corrected errors, incomplete words, and Unicode input before implementation.
-
-## Suggested development roadmap
-
-### Phase 1: Foundation and MVP
-
-- Set up Tauri, React, TypeScript, and styling
-- Build desktop navigation and basic settings
-- Implement timed typing tests and reliable scoring
-- Display test results and persist sessions in SQLite
-
-### Phase 2: Learning and insights
-
-- Structured lessons and progression
-- Weak-key analysis
-- Analytics dashboard and history
-
-### Phase 3: Engagement
-
-- Typing games and challenges
-- Achievements and streaks
-- Themes, sounds, and customization
-
-### Phase 4: Developer mode and optional AI
-
-- Code-oriented typing exercises
-- Custom content import
-- Optional local AI recommendations
-
-### Phase 5: Quality and distribution
-
-- Automated tests for scoring and timing
-- Accessibility and keyboard-only navigation
-- Performance profiling
-- Windows installer and release packaging
-
-## Non-functional requirements
-
-- Offline-first and local data storage
-- Responsive keystroke handling and accurate timers
-- Low CPU and memory overhead
-- Keyboard-accessible UI
-- Graceful recovery from interrupted sessions
-- No telemetry or cloud sync without explicit user consent
-
-## Open product decisions
-
-The following must be confirmed before the implementation plan is finalized:
-
-- [ ] Personal-only or public distribution
-- [ ] Target skill levels
-- [ ] Structured lessons, free tests, or both
-- [ ] Visual direction: premium, gaming, minimal, or robot/AI-themed
-- [ ] AI: local, cloud, optional, or none
-- [ ] Supported keyboard layouts and languages
-- [ ] Exact scoring rules for mistakes and corrections
-- [ ] Whether profiles, accounts, or cloud sync are required
-
-## Current status
-
-This README is the initial product specification. No application code or working features are included yet.
+- **Offline-First:** All data stored locally in SQLite; zero cloud network dependencies.
+- **Local Process Supervision:** Tauri spawns and manages Spring Boot over loopback `127.0.0.1` with per-launch `X-TypingTrainer-Request-Token`.
+- **Low Overhead:** Low CPU and memory footprint with single Hikari write connection.
+- **Accessibility:** Full keyboard accelerator support and high contrast dark/light themes.
 
 ## License
 

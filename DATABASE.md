@@ -61,7 +61,7 @@ backend/src/main/resources/db/migration/
 | Version | Script Name | Description | Status |
 |---|---|---|:---:|
 | **V1** | `V1__create_initial_schema.sql` | Initial schema: `typing_sessions` and `user_settings` tables | **Applied** |
-| **V2** | `V2__add_session_indexes_and_stats.sql` | Planned: Performance indexes on `completed_at` and `gross_wpm` | Planned (Phase 2) |
+| **V2** | `V2__create_dashboard_schema.sql` | Phase 3 Dashboard schema: user profile, gamification, reward ledger, key telemetry, and session mode extensions | **Applied** |
 | **V3** | `V3__create_curriculum_schema.sql` | Planned: Learning modules, lessons, and exercise progress | Planned (Phase 5) |
 | **V4** | `V4__create_drills_schema.sql` | Planned: Skill drills and character error tracking | Planned (Phase 6) |
 | **V5** | `V5__create_developer_mode_schema.sql` | Planned: Code snippet catalog and syntax practice | Planned (Phase 7) |
@@ -165,6 +165,86 @@ public class TypingSessionEntity {
     
     // Constructors, getters
 }
+```
+
+---
+
+## 5. Table Definitions (V2 Phase 3 Dashboard Extension)
+
+### 5.1 Table: `user_profile`
+Stores user identity and display preferences.
+
+```sql
+CREATE TABLE user_profile (
+    id TEXT PRIMARY KEY NOT NULL,
+    display_name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+```
+
+### 5.2 Table: `user_gamification`
+Stores core progression, streaks, level, and shield inventory.
+
+```sql
+CREATE TABLE user_gamification (
+    user_id TEXT PRIMARY KEY NOT NULL,
+    total_xp INTEGER NOT NULL DEFAULT 0,
+    current_level INTEGER NOT NULL DEFAULT 1,
+    current_tier TEXT NOT NULL DEFAULT 'Novice',
+    current_streak_days INTEGER NOT NULL DEFAULT 0,
+    longest_streak_days INTEGER NOT NULL DEFAULT 0,
+    freeze_shields_available INTEGER NOT NULL DEFAULT 0,
+    last_practice_date TEXT,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user_profile(id) ON DELETE CASCADE
+);
+```
+
+### 5.3 Table: `user_reward_ledger`
+Immutable ledger ensuring idempotent award issuance. Prevents duplicate XP rewards.
+
+```sql
+CREATE TABLE user_reward_ledger (
+    reward_event_id TEXT PRIMARY KEY NOT NULL,
+    session_id TEXT,
+    reward_type TEXT NOT NULL,
+    xp_amount INTEGER NOT NULL,
+    awarded_at TEXT NOT NULL
+);
+
+CREATE INDEX idx_reward_ledger_session ON user_reward_ledger(session_id);
+CREATE INDEX idx_reward_ledger_type ON user_reward_ledger(reward_type);
+```
+
+### 5.4 Table: `key_telemetry`
+Per-key diagnostic sample records supporting the D6 algorithmic weak-key remediation engine.
+
+```sql
+CREATE TABLE key_telemetry (
+    id TEXT PRIMARY KEY NOT NULL,
+    session_id TEXT NOT NULL,
+    key_char TEXT NOT NULL,
+    opportunities INTEGER NOT NULL,
+    errors INTEGER NOT NULL,
+    total_latency_ms INTEGER NOT NULL DEFAULT 0,
+    recorded_at TEXT NOT NULL,
+    FOREIGN KEY (session_id) REFERENCES typing_sessions(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_key_telemetry_key_date ON key_telemetry(key_char, recorded_at);
+CREATE INDEX idx_key_telemetry_session ON key_telemetry(session_id);
+```
+
+### 5.5 Extended Columns on `typing_sessions` (V2)
+```sql
+ALTER TABLE typing_sessions ADD COLUMN session_mode TEXT NOT NULL DEFAULT 'TYPING_TEST';
+ALTER TABLE typing_sessions ADD COLUMN test_duration_target INTEGER NOT NULL DEFAULT 60;
+ALTER TABLE typing_sessions ADD COLUMN is_official_benchmark BOOLEAN NOT NULL DEFAULT 1;
+ALTER TABLE typing_sessions ADD COLUMN xp_earned INTEGER NOT NULL DEFAULT 0;
+
+CREATE INDEX idx_typing_sessions_completed ON typing_sessions(completed_at);
+CREATE INDEX idx_typing_sessions_mode ON typing_sessions(session_mode);
 ```
 
 ---

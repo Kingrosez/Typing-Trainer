@@ -102,10 +102,19 @@ desktop/
     features/
       dashboard/
         components/
-        hooks/
-        services/
-        types/
-        DashboardPage.tsx
+          DailyGoalCapsule.tsx
+          DailyGoalModal.tsx
+          DashboardSkeleton.tsx
+          GamificationProgressionWidget.tsx
+          PersonalBestShowcase.tsx
+          PrimaryMetricCards.tsx
+          QuickPracticeCards.tsx
+          RecentSessionsTable.tsx
+          WeakKeyHeroBanner.tsx
+          WeeklyActivityChart.tsx
+          WelcomeStatusHeader.tsx
+          WpmTrendChart.tsx
+        Dashboard.tsx
 
       typing-test/
         components/
@@ -181,9 +190,11 @@ desktop/
     services/
       api/
         apiClient.ts
-        apiConfig.ts
-        apiErrors.ts
-        endpoints.ts
+        dashboardService.ts
+        sessionService.ts
+        healthService.ts
+        dashboardTypes.ts
+        types.ts
 
     stores/
       appStore.ts

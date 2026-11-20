@@ -479,17 +479,42 @@ Do not include the full passage or every keystroke in the request unless a separ
 
 ### GET `/sessions`
 
-Retrieve session history.
+Retrieve session history with pagination and sorting.
 
-Optional query parameters:
+Supported query parameters:
 
-- `from`: inclusive UTC timestamp
-- `to`: exclusive UTC timestamp
-- `mode`
-- `sourceType`
-- `page`
-- `size`
-- `sort`, restricted to supported fields
+- `page`: zero-based page index (default `0`)
+- `size`: page size (default `20`, dashboard tables use `5`)
+- `sort`: sort field and direction (e.g. `completedAt,desc`)
+
+Example response:
+
+```json
+{
+  "items": [
+    {
+      "id": "c8b40bb5-8b79-4c85-b2a4-7ec7cda9f21c",
+      "grossWpm": 75.0,
+      "netWpm": 72.4,
+      "accuracy": 98.4,
+      "totalErrors": 2,
+      "rawCharacters": 362,
+      "correctCharacters": 360,
+      "durationSeconds": 60.0,
+      "passage": "Sample text",
+      "completedAt": "2026-11-20T10:00:00Z",
+      "sessionMode": "TYPING_TEST",
+      "testDurationTarget": 60,
+      "isOfficialBenchmark": true,
+      "xpEarned": 50
+    }
+  ],
+  "page": 0,
+  "size": 5,
+  "totalItems": 142,
+  "totalPages": 29
+}
+```
 
 **Success:** `200 OK`
 
@@ -508,6 +533,140 @@ Delete one locally stored session, if session deletion is enabled in product set
 **Not found:** `404 RESOURCE_NOT_FOUND`
 
 Deletion policy must account for dependent key statistics and analytics. Use a transaction and explicit foreign-key behavior.
+
+## 10.1 Dashboard endpoints
+
+### GET `/dashboard/summary`
+
+Retrieve comprehensive telemetry and metrics powering Dashboard widgets W-01 through W-10.
+
+Optional query parameter:
+- `clientTimeZone`: IANA time zone identifier (e.g. `America/New_York`, `UTC`) to accurately compute local calendar-day boundaries for daily goals, weekly activity, and streaks.
+
+Example response:
+
+```json
+{
+  "userStatus": {
+    "displayName": "Alex",
+    "currentLevel": 12,
+    "currentTier": "Apprentice Touch Typist",
+    "totalXp": 2450,
+    "xpProgressInLevel": 450,
+    "xpRequiredForNextLevel": 1000,
+    "levelProgressPercentage": 45.0,
+    "currentStreakDays": 5,
+    "longestStreakDays": 14,
+    "freezeShieldsAvailable": 2
+  },
+  "dailyGoal": {
+    "targetMinutes": 20,
+    "completedSecondsToday": 1320,
+    "remainingSecondsToday": 0,
+    "progressPercentage": 100.0,
+    "isCompletedToday": true
+  },
+  "primaryMetrics": {
+    "bestWpm": 72.0,
+    "averageWpm": 58.3,
+    "accuracy": 96.4,
+    "totalPracticeSeconds": 66900.0,
+    "completedSessionCount": 142,
+    "currentSessionWpm": 64.0
+  },
+  "weeklyActivity": [
+    {
+      "dayOfWeek": "Mon",
+      "date": "2026-11-16",
+      "durationSeconds": 1500,
+      "goalMet": true,
+      "isToday": false
+    }
+  ],
+  "wpmTrend": [
+    {
+      "sessionId": "sess-01",
+      "netWpm": 52.0,
+      "grossWpm": 54.0,
+      "accuracy": 96.3,
+      "totalErrors": 2,
+      "completedAt": "2026-11-14T09:00:00Z"
+    }
+  ],
+  "weakKeyRecommendations": [
+    {
+      "keyChar": "r",
+      "errorRate": 0.142,
+      "accuracy": 85.8,
+      "opportunities": 85,
+      "errors": 12,
+      "wpi": 0.48,
+      "tier": "Weak",
+      "explanation": "Key 'r' has an error rate of 14.2% across 85 opportunities.",
+      "consecutiveCleanSessions": 0,
+      "isMastered": false
+    }
+  ],
+  "weakKeyOverview": {
+    "overallStatus": "WEAK",
+    "headline": "Algorithmic Weak-Key Remediation",
+    "explanation": "Elevated friction detected on key reaches. Dedicated target-key drills recommended to restore motor cadence.",
+    "weakKeyCount": 1,
+    "developingKeyCount": 0,
+    "stableKeyCount": 2,
+    "masteredKeyCount": 1
+  },
+  "personalBests": {
+    "best15sWpm": 84.0,
+    "best60sWpm": 72.0,
+    "bestDevModeWpm": 58.0,
+    "longestSessionSeconds": 2520.0,
+    "best15sAccuracy": 97.5,
+    "best60sAccuracy": 96.4,
+    "bestDevModeAccuracy": 95.2,
+    "longestSessionAccuracy": 94.8,
+    "best15sDate": "2026-11-19T14:00:00Z",
+    "best60sDate": "2026-11-18T16:30:00Z",
+    "bestDevModeDate": "2026-11-15T10:15:00Z",
+    "longestSessionDate": "2026-11-12T11:00:00Z"
+  },
+  "recentSessions": [
+    {
+      "id": "c8b40bb5-8b79-4c85-b2a4-7ec7cda9f21c",
+      "sessionMode": "TYPING_TEST",
+      "netWpm": 72.4,
+      "grossWpm": 75.0,
+      "accuracy": 98.4,
+      "totalErrors": 2,
+      "durationSeconds": 60.0,
+      "xpEarned": 50,
+      "completedAt": "2026-11-20T10:00:00Z",
+      "isOfficialBenchmark": true
+    }
+  ]
+}
+```
+
+**Success:** `200 OK`
+
+### PUT `/dashboard/daily-goal`
+
+Update the user's daily practice goal target in minutes.
+
+Request body:
+```json
+{
+  "targetMinutes": 30
+}
+```
+
+Validation rules:
+- `targetMinutes` must be between `1` and `120` inclusive (`@Min(1) @Max(120)`).
+
+Response: Updated `DailyGoalDto` object.
+
+**Success:** `200 OK`  
+**Validation failure:** `400 BAD_REQUEST`
 
 ## 11. Analytics endpoints
 

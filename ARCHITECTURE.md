@@ -1,9 +1,9 @@
 # Typing Trainer - System Architecture
 
-**Status:** Proposed baseline architecture  
+**Status:** Approved implementation architecture  
 **Platform:** Windows desktop  
 **Architecture style:** Offline-first modular monolith  
-**Last updated:** 12 November 2026
+**Last updated:** 20 November 2026
 
 ## 1. Purpose
 
@@ -230,6 +230,23 @@ backend/
 ```
 
 Use package-by-feature. Keep controllers thin, put business rules in services, and isolate persistence in repositories. Avoid creating interfaces and abstractions without a concrete need.
+
+### 4.4 Dashboard Architecture & Widget Matrix (Phase 3)
+
+The integrated Dashboard serves as the central mission control, organized across six responsive rows comprising widgets W-01 through W-10:
+
+- **Row 1:** W-01 Welcome & User Status (left) and W-02 Daily Practice Goal with circular SVG progress ring (right).
+- **Row 2:** W-03 Primary Metrics (4-card metrics grid: Best 60s WPM, Trailing 30 Average WPM, Overall Accuracy, Total Practice Duration).
+- **Row 3:** W-04 Weekly Activity Chart (7-day bar chart) and W-05 WPM Trend Chart (Net vs. Gross WPM progression curve).
+- **Row 4:** W-06 Algorithmic Weak-Key Remediation Banner (D6 character friction engine) and W-07 Quick Practice Navigation Cards.
+- **Row 5:** W-08 Gamification Progression & Streak Hub (Level crest, XP progress bar, freeze shield inventory) and W-09 Personal Best Showcase (4-card verified benchmark grid).
+- **Row 6:** W-10 Recent Practice Sessions Table (full-width accessible semantic table with pagination and practice mode telemetry).
+
+#### Key Dashboard Architecture Principles:
+1. **Data Ownership & Zero-Fabrication:** The React frontend acts as a pure presentation layer. All XP, levels, streak validations, personal best records, and weak-key classifications are authoritatively calculated and persisted by the Spring Boot backend.
+2. **Zero-Redundancy Session Mounting:** W-10 initializes directly with `summary.recentSessions`, avoiding an unnecessary secondary API call on initial page load. Pagination is loaded on-demand via `sessionService.getRecentSessions()`.
+3. **Idempotent Daily Reward Confirmation:** The +150 XP daily goal celebration is strictly displayed only when the backend confirms `dailyGoal.isCompletedToday` via `user_reward_ledger`, preventing duplicate rewards.
+4. **D6 Weak-Key Remediation Engine:** Categorizes key mastery deterministically across six distinct states (`INSUFFICIENT_DATA`, `WEAK`, `DEVELOPING`, `STABLE`, `MASTERED`, `NO_RECOMMENDATIONS`), requiring 3 distinct completed sessions with >= 30 target opportunities and <= 3% error rate to graduate keys to certified touch-typing mastery.
 
 ## 5. Application modules
 
