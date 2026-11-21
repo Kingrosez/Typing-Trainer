@@ -144,14 +144,26 @@ Keep commits focused, atomic, and bisect-friendly. Avoid combining unrelated cha
 8. **Merge:** Merge into `main` using rebase-and-merge or squash-and-merge to maintain a clean, linear history.
 9. **Clean Up:** Delete the remote and local feature branch after merging.
 
-### 6.2 Main Branch Protection & Security Governance
+### 6.2 Main Branch Protection, Hotfix Policy & Security Governance
 
-The `main` branch is protected:
-- **No Direct Pushes:** All changes must land via Pull Requests.
-- **CI Gates Required:** All automated workflows must pass prior to merge.
-- **Linear History Preferred:** Force-pushing is strictly blocked on `main`.
+`main` is designated as the protected integration branch. GitHub branch protection configuration is pending owner setup.
+
+#### Branch Governance Invariants:
+- **No Direct Pushes:** All changes must land via Pull Requests targeting `main`. Direct pushes to `main` are strictly not permitted by project policy.
+- **Mandatory CI Status Checks:** All three automated workflows (`Backend CI`, `Frontend CI`, `Desktop Rust CI`) run on all Pull Requests and must pass prior to merge.
+- **Linear History Preferred:** Fast-forward, rebase-and-merge, or squash-and-merge is preferred to preserve bisectability.
+- **Force Pushes Prohibited:** Force-pushing or rewriting history on `main` is strictly blocked.
 - **Branch Deletion Blocked:** The `main` branch cannot be deleted.
-- **Zero Secrets / Artifacts:** Never commit secrets, local databases (`*.db`, `*.sqlite`), temporary debug dumps, or generated build output (`target/`, `dist/`).
+- **Zero Secrets / Artifacts:** Never commit secrets, credentials, personal tokens, local databases (`*.db`, `*.sqlite`), debug memory dumps, or generated build output (`target/`, `dist/`).
+
+#### Hotfix Policy:
+All hotfixes must:
+1. Originate from an up-to-date `main` branch on a short-lived `hotfix/*` branch (e.g. `hotfix/startup-crash`).
+2. Target `main` through a standard Pull Request.
+3. Pass all mandatory automated CI status checks.
+4. Follow the identical review and verification policy.
+
+Direct pushes to `main` are not permitted under any circumstances. No exceptions are made for urgent changes.
 
 ## 7. Frontend contribution rules
 

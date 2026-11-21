@@ -3,14 +3,8 @@ name: Desktop Rust CI
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'desktop/src-tauri/**'
-      - '.github/workflows/desktop-tauri.yml'
   pull_request:
     branches: [ main ]
-    paths:
-      - 'desktop/src-tauri/**'
-      - '.github/workflows/desktop-tauri.yml'
 
 permissions:
   contents: read
@@ -46,9 +40,7 @@ jobs:
       - name: Cargo format verification
         working-directory: desktop/src-tauri
         run: cargo fmt --all -- --check
-        continue-on-error: true
 
       - name: Cargo Clippy lint analysis
         working-directory: desktop/src-tauri
         run: cargo clippy
-        continue-on-error: true
