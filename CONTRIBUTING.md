@@ -76,48 +76,82 @@ Never attach secrets, personal database files, or private typed content.
 
 ## 5. Branching and commit conventions
 
-Use focused branches.
+The repository follows **GitHub Flow**. All development is conducted on short-lived branches created from an up-to-date `main` branch. A permanent `develop` branch is not used.
 
-Suggested branch names:
+### 5.1 Branch Policy
+
+Branch names must strictly use lowercase kebab-case prefixed with the appropriate category:
+
+| Branch Category | Purpose | Example |
+|---|---|---|
+| `main` | Stable, protected integration branch | `main` |
+| `feat/*` | New user-facing features or capabilities | `feat/typing-engine`, `feat/curriculum-roadmap` |
+| `fix/*` | Bug and defect fixes | `fix/session-scoring`, `fix/backspace-accounting` |
+| `refactor/*` | Code restructuring without behavior change | `refactor/state-machine`, `refactor/api-client` |
+| `test/*` | Adding or updating tests | `test/typing-engine-tests`, `test/e2e-suite` |
+| `docs/*` | Documentation and specification updates | `docs/update-setup-guide`, `docs/api-contract` |
+| `chore/*` | Tooling, configuration, or dependency updates | `chore/update-eslint-config` |
+| `ci/*` | GitHub Actions and CI/CD workflow updates | `ci/add-desktop-rust-check` |
+| `hotfix/*` | Urgent production fixes targeting `main` | `hotfix/startup-crash` |
+
+### 5.2 Commit Conventions
+
+Commits must follow the **Conventional Commits** specification:
 
 ```text
-feature/typing-test
-feature/lesson-progression
-feature/weak-key-analytics
-fix/session-timer
-fix/sqlite-migration
-docs/setup-guide
-refactor/typing-engine
+<type>(<optional scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
 ```
 
-Use clear commit messages. Conventional Commits are recommended:
+Approved types:
+- `feat:` A new feature
+- `fix:` A bug fix
+- `docs:` Documentation changes only
+- `refactor:` A code change that neither fixes a bug nor adds a feature
+- `test:` Adding missing tests or correcting existing tests
+- `chore:` Changes to the build process, tooling, or auxiliary libraries
+- `build:` Changes that affect the build system or external dependencies
+- `ci:` Changes to CI configuration files and scripts
 
-```text
-feat(typing): add timed typing sessions
-fix(analytics): correct weekly average calculation
-refactor(backend): isolate session validation
-test(typing): cover corrected character handling
-docs(api): document session idempotency
-chore(build): update frontend tooling
-```
+Examples:
+- `feat(typing): add monotonic session timer core`
+- `fix(scoring): correct net wpm penalty calculation for uncorrected errors`
+- `docs(planning): finalize Phase 3 Stage 2.5 practice arenas specifications`
+- `ci(workflows): add GitHub Actions pipelines for backend, frontend, and desktop`
 
-Keep commits small enough to review and avoid mixing unrelated changes.
+Keep commits focused, atomic, and bisect-friendly. Avoid combining unrelated changes.
 
-## 6. Development workflow
+## 6. Development and Pull Request workflow
 
-Recommended workflow:
+### 6.1 Standard Workflow Steps
 
-1. Start from the current main branch.
-2. Create a focused feature or fix branch.
-3. Understand the existing module and contract.
-4. Implement the smallest complete change.
-5. Add or update automated tests.
-6. Run the relevant checks.
-7. Review the diff for unrelated changes, secrets, and generated files.
-8. Update documentation where necessary.
-9. Submit a pull request with a clear summary and test evidence.
+1. **Synchronize:** Fetch and pull the latest changes from `origin/main`.
+2. **Branch:** Create a focused, short-lived branch adhering to naming conventions:
+   ```bash
+   git checkout -b feat/my-scoped-feature
+   ```
+3. **Develop & Test:** Implement the change incrementally, observing architectural boundaries.
+4. **Local Verification:** Execute all applicable test suites locally before committing:
+   - Backend: `Set-Location backend; .\mvnw.cmd test`
+   - Frontend: `Set-Location desktop; npm run typecheck; npm run lint; npm test`
+   - Desktop: `Set-Location desktop\src-tauri; cargo check; cargo test`
+5. **Commit:** Commit changes using conventional commit messages.
+6. **Open PR:** Push the branch to `origin` and open a Pull Request targeting `main`. Fill out the `.github/pull_request_template.md`.
+7. **CI Evaluation:** Ensure all GitHub Actions status checks pass (`Backend CI`, `Frontend CI`, `Desktop Rust CI`).
+8. **Merge:** Merge into `main` using rebase-and-merge or squash-and-merge to maintain a clean, linear history.
+9. **Clean Up:** Delete the remote and local feature branch after merging.
 
-Do not mark a task complete while relevant checks are failing.
+### 6.2 Main Branch Protection & Security Governance
+
+The `main` branch is protected:
+- **No Direct Pushes:** All changes must land via Pull Requests.
+- **CI Gates Required:** All automated workflows must pass prior to merge.
+- **Linear History Preferred:** Force-pushing is strictly blocked on `main`.
+- **Branch Deletion Blocked:** The `main` branch cannot be deleted.
+- **Zero Secrets / Artifacts:** Never commit secrets, local databases (`*.db`, `*.sqlite`), temporary debug dumps, or generated build output (`target/`, `dist/`).
 
 ## 7. Frontend contribution rules
 

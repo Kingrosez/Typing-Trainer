@@ -1,0 +1,54 @@
+name: Desktop Rust CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'desktop/src-tauri/**'
+      - '.github/workflows/desktop-tauri.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'desktop/src-tauri/**'
+      - '.github/workflows/desktop-tauri.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  rust-verify:
+    name: Desktop Rust Check, Test & Lint (Windows MSVC)
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust dependency cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: 'desktop/src-tauri -> desktop/src-tauri/target'
+
+      - name: Cargo compilation check
+        working-directory: desktop/src-tauri
+        run: cargo check
+
+      - name: Cargo tests
+        working-directory: desktop/src-tauri
+        run: cargo test
+
+      - name: Cargo format verification
+        working-directory: desktop/src-tauri
+        run: cargo fmt --all -- --check
+        continue-on-error: true
+
+      - name: Cargo Clippy lint analysis
+        working-directory: desktop/src-tauri
+        run: cargo clippy
+        continue-on-error: true
