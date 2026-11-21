@@ -43,7 +43,10 @@ impl BackendManager {
         let (jar_path, is_jar) = locate_backend_artifact();
         let db_path = get_database_path();
 
-        info!("Starting Spring Boot backend (is_jar={}) with database path: {:?}", is_jar, db_path);
+        info!(
+            "Starting Spring Boot backend (is_jar={}) with database path: {:?}",
+            is_jar, db_path
+        );
 
         let mut cmd = if is_jar {
             let mut c = Command::new("java");
@@ -56,7 +59,10 @@ impl BackendManager {
             c
         } else {
             // Development fallback: run packaged jar if available in target, or run via mvnw
-            let target_jar = PathBuf::from("..").join("backend").join("target").join("typing-trainer-backend-0.1.0-SNAPSHOT.jar");
+            let target_jar = PathBuf::from("..")
+                .join("backend")
+                .join("target")
+                .join("typing-trainer-backend-0.1.0-SNAPSHOT.jar");
             if target_jar.exists() {
                 let mut c = Command::new("java");
                 c.arg("-jar")
@@ -78,13 +84,21 @@ impl BackendManager {
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
 
-        let mut child_proc = cmd.spawn().map_err(|e| format!("Failed to spawn backend process: {}", e))?;
+        let mut child_proc = cmd
+            .spawn()
+            .map_err(|e| format!("Failed to spawn backend process: {}", e))?;
 
         // Assign child process handle to Win32 Job Object before capturing stdout
         job.assign_process(child_proc.as_raw_handle())?;
-        info!("Assigned child process (PID: {:?}) to Win32 Job Object", child_proc.id());
+        info!(
+            "Assigned child process (PID: {:?}) to Win32 Job Object",
+            child_proc.id()
+        );
 
-        let stdout = child_proc.stdout.take().ok_or("Failed to capture backend stdout")?;
+        let stdout = child_proc
+            .stdout
+            .take()
+            .ok_or("Failed to capture backend stdout")?;
 
         // Capture port from stdout handshake line: "[TYPING_TRAINER_BACKEND_PORT] port=<PORT>"
         let port = match read_port_handshake(stdout, Duration::from_secs(45)) {
@@ -132,7 +146,11 @@ impl BackendManager {
 
 fn locate_backend_artifact() -> (PathBuf, bool) {
     if let Ok(exe_dir) = std::env::current_exe() {
-        let bundled_jar = exe_dir.parent().unwrap_or(&exe_dir).join("resources").join("typing-trainer-backend.jar");
+        let bundled_jar = exe_dir
+            .parent()
+            .unwrap_or(&exe_dir)
+            .join("resources")
+            .join("typing-trainer-backend.jar");
         if bundled_jar.exists() {
             return (bundled_jar, true);
         }
@@ -170,7 +188,9 @@ fn read_port_handshake<R: std::io::Read + Send + 'static>(
                 }
             }
         }
-        let _ = tx.send(Err("Backend stdout stream closed before port handshake".to_string()));
+        let _ = tx.send(Err(
+            "Backend stdout stream closed before port handshake".to_string()
+        ));
     });
 
     while start_time.elapsed() < timeout {
@@ -179,5 +199,8 @@ fn read_port_handshake<R: std::io::Read + Send + 'static>(
         }
     }
 
-    Err(format!("Timed out after {}s waiting for backend port handshake", timeout.as_secs()))
+    Err(format!(
+        "Timed out after {}s waiting for backend port handshake",
+        timeout.as_secs()
+    ))
 }

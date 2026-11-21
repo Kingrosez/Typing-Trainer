@@ -80,7 +80,9 @@ impl JobObject {
 
             if res == 0 {
                 CloseHandle(handle);
-                return Err("Failed to set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE on Job Object".to_string());
+                return Err(
+                    "Failed to set JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE on Job Object".to_string(),
+                );
             }
 
             Ok(JobObject { handle })
